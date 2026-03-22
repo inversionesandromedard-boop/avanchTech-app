@@ -85,6 +85,7 @@
 .btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1d4ed8}
 .btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#047857}
 .btn-ghost{background:var(--surface2);color:var(--muted2);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:#b45309}
 .alert{border-radius:8px;padding:11px 14px;font-size:12px;margin-bottom:12px}
 .alert.info{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);color:var(--blue3)}
 .alert.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:var(--gold3)}
@@ -100,6 +101,13 @@
 .isr-row .l{color:var(--muted)}.isr-row .v{color:var(--text);font-weight:600}
 .isr-total{display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);margin-top:6px}
 .isr-total .l{font-weight:600}.isr-total .v{font-family:var(--ff2);font-size:15px;font-weight:700;color:var(--green3)}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:520px;animation:fadeUp .3s ease}
+.modal-title{font-family:var(--ff2);font-size:14px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1}
+.modal-close:hover{color:var(--text)}
 @media(max-width:640px){.main{grid-template-columns:1fr}.sidebar{display:none}.fg-row{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
 </style>
 </head>
@@ -131,6 +139,32 @@
       <button class="btn-auth" onclick="doRegister()" id="btn-register">Crear cuenta</button>
     </div>
     <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--muted)">Avanch Technology SRL · Santo Domingo Este, RD</div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modal-edit-cliente">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Cliente <button class="modal-close" onclick="cerrarModal()">✕</button></div>
+    <input type="hidden" id="ec-id">
+    <div class="fg-row">
+      <div class="fgg"><label>Nombre *</label><input type="text" id="ec-nombre" placeholder="Nombre o razón social"></div>
+      <div class="fgg"><label>RNC</label><input type="text" id="ec-rnc" placeholder="000-0000000-0"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fgg"><label>Email</label><input type="email" id="ec-email" placeholder="correo@empresa.com"></div>
+      <div class="fgg"><label>Teléfono</label><input type="tel" id="ec-tel" placeholder="809-000-0000"></div>
+    </div>
+    <div class="fgg"><label>Dirección</label><input type="text" id="ec-dir" placeholder="Calle, número, sector, ciudad"></div>
+    <div class="fg-row">
+      <div class="fgg"><label>Plan</label><select id="ec-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div>
+      <div class="fgg"><label>Día ciclo</label><select id="ec-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div>
+    </div>
+    <div class="fgg"><label>Estado</label><select id="ec-estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option><option value="suspendido">Suspendido</option></select></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-green" onclick="guardarEdicionCliente()">✓ Guardar cambios</button>
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -194,9 +228,7 @@
         <div class="g2">
           <div class="card"><div class="card-title">Simulador</div>
             <div class="fgg"><label>Monto (RD$)</label><input type="number" id="sim-monto" placeholder="0.00" oninput="simular()"></div>
-            <div class="fg-row">
-              <div class="fgg"><label>Plazo</label><select id="sim-plazo" onchange="simular()"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></div>
-            </div>
+            <div class="fg-row"><div class="fgg"><label>Plazo</label><select id="sim-plazo" onchange="simular()"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option></select></div></div>
             <div class="isr" id="sim-res" style="display:none">
               <div class="isr-row"><span class="l">Capital</span><span class="v" id="sr-cap">—</span></div>
               <div class="isr-row"><span class="l">Ganancia estimada</span><span class="v" id="sr-gan">—</span></div>
@@ -222,15 +254,30 @@
         <div class="sec-title">👥 Clientes</div>
         <div style="margin-bottom:12px;display:flex;gap:8px">
           <button class="btn btn-primary" onclick="tog('form-nc')">+ Nuevo</button>
-          <button class="btn btn-ghost" onclick="cargarClientes()">↻</button>
+          <button class="btn btn-ghost" onclick="cargarClientes()">↻ Actualizar</button>
         </div>
-        <div id="form-nc" style="display:none" class="card"><div class="card-title">Nuevo Cliente</div>
-          <div class="fg-row"><div class="fgg"><label>Nombre *</label><input type="text" id="nc-nombre" placeholder="Nombre o razón social"></div><div class="fgg"><label>RNC</label><input type="text" id="nc-rnc" placeholder="000-0000000-0"></div></div>
-          <div class="fg-row"><div class="fgg"><label>Email</label><input type="email" id="nc-email"></div><div class="fgg"><label>Teléfono</label><input type="tel" id="nc-tel"></div></div>
-        <div class="fgg"><label>Dirección</label><input type="text" id="nc-dir" placeholder="Calle, número, sector, ciudad"></div>  <div class="fg-row"><div class="fgg"><label>Plan</label><select id="nc-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div><div class="fgg"><label>Día ciclo</label><select id="nc-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div></div>
-          <div style="display:flex;gap:8px"><button class="btn btn-green" onclick="crearCliente()">✓ Guardar</button><button class="btn btn-ghost" onclick="limpiarFormCliente()">↺ Limpiar</button><button class="btn btn-ghost" onclick="tog('form-nc')">Cancelar</button></div>
+        <div id="form-nc" style="display:none" class="card">
+          <div class="card-title">Nuevo Cliente</div>
+          <div class="fg-row">
+            <div class="fgg"><label>Nombre *</label><input type="text" id="nc-nombre" placeholder="Nombre o razón social"></div>
+            <div class="fgg"><label>RNC</label><input type="text" id="nc-rnc" placeholder="000-0000000-0"></div>
+          </div>
+          <div class="fg-row">
+            <div class="fgg"><label>Email</label><input type="email" id="nc-email" placeholder="correo@empresa.com"></div>
+            <div class="fgg"><label>Teléfono</label><input type="tel" id="nc-tel" placeholder="809-000-0000"></div>
+          </div>
+          <div class="fgg"><label>Dirección</label><input type="text" id="nc-dir" placeholder="Calle, número, sector, ciudad"></div>
+          <div class="fg-row">
+            <div class="fgg"><label>Plan</label><select id="nc-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div>
+            <div class="fgg"><label>Día ciclo</label><select id="nc-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-green" onclick="crearCliente()">✓ Guardar</button>
+            <button class="btn btn-ghost" onclick="limpiarFormCliente()">↺ Limpiar</button>
+            <button class="btn btn-ghost" onclick="tog('form-nc')">Cancelar</button>
+          </div>
         </div>
-        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-clientes"><thead><tr><th>Nombre</th><th>Plan</th><th>Teléfono</th><th>Ciclo</th><th>Estado</th></tr></thead><tbody><tr><td colspan="5"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-clientes"><thead><tr><th>Nombre</th><th>Plan</th><th>Teléfono</th><th>Ciclo</th><th>Estado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
       </div>
 
       <!-- ADMIN FACTURACIÓN -->
@@ -427,23 +474,95 @@ async function enviarSolicitud(){
   if(data?.length)document.getElementById('t-inversiones').querySelector('tbody').innerHTML=data.map(i=>`<tr><td>${new Date(i.fecha_solicitud).toLocaleDateString('es-DO')}</td><td style="color:var(--green3)">RD$${fmt(i.monto)}</td><td>${i.proposito}</td><td>${bdg(i.estado)}</td></tr>`).join('');
 }
 
+// ── CLIENTES ──
 async function cargarClientes(){
-  const{data}=await sb.from('clientes').select('*').order('creado_en',{ascending:false});
-  if(!data?.length){tbEmpty('t-clientes',5);return;}
-  document.getElementById('t-clientes').querySelector('tbody').innerHTML=data.map(c=>`<tr><td>${c.nombre}</td><td>${c.plan||'—'}</td><td>${c.telefono||'—'}</td><td>${c.dia_ciclo||'—'}</td><td>${bdg(c.estado)}</td></tr>`).join('');
+  const{data,error}=await sb.from('clientes').select('*').order('creado_en',{ascending:false});
+  if(error){notif('Error al cargar clientes','err');console.error(error);return;}
+  if(!data?.length){tbEmpty('t-clientes',6);return;}
+  document.getElementById('t-clientes').querySelector('tbody').innerHTML=data.map(c=>`
+    <tr>
+      <td>${c.nombre}</td>
+      <td>${c.plan||'—'}</td>
+      <td>${c.telefono||'—'}</td>
+      <td>${c.dia_ciclo||'—'}</td>
+      <td>${bdg(c.estado||'activo')}</td>
+      <td><button class="btn btn-gold" style="padding:3px 9px;font-size:10px" onclick="abrirEditar(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️ Editar</button></td>
+    </tr>`).join('');
+}
+
+function limpiarFormCliente(){
+  ['nc-nombre','nc-rnc','nc-email','nc-tel','nc-dir'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const plan=document.getElementById('nc-plan');if(plan)plan.selectedIndex=0;
+  const ciclo=document.getElementById('nc-ciclo');if(ciclo)ciclo.selectedIndex=0;
+  notif('↺ Formulario limpiado','ok');
 }
 
 async function crearCliente(){
   const nombre=document.getElementById('nc-nombre').value.trim();
   if(!nombre){notif('⚠️ Nombre requerido','err');return;}
-  const datos={nombre,rnc:(document.getElementById('nc-rnc').value||'').trim(),email:(document.getElementById('nc-email').value||'').trim(),telefono:(document.getElementById('nc-tel').value||'').trim(),direccion:(document.getElementById('nc-dir').value||'').trim(),plan:document.getElementById('nc-plan').value,dia_ciclo:parseInt(document.getElementById('nc-ciclo').value)};
+  // FIX: email vacío → null para evitar error de validación Supabase
+  const emailVal=document.getElementById('nc-email').value.trim();
+  const datos={
+    nombre,
+    rnc:document.getElementById('nc-rnc').value.trim()||null,
+    email:emailVal||null,
+    telefono:document.getElementById('nc-tel').value.trim()||null,
+    direccion:document.getElementById('nc-dir').value.trim()||null,
+    plan:document.getElementById('nc-plan').value,
+    dia_ciclo:parseInt(document.getElementById('nc-ciclo').value),
+    estado:'activo'
+  };
   const{error}=await sb.from('clientes').insert(datos);
-  if(error){notif('Error: '+error.message,'err');return;}
-  notif('✓ Cliente creado','ok');limpiarFormCliente();tog('form-nc');cargarClientes();
+  if(error){notif('Error: '+error.message,'err');console.error(error);return;}
+  notif('✓ Cliente creado correctamente','ok');
+  limpiarFormCliente();
+  tog('form-nc');
+  cargarClientes();
 }
-function limpiarFormCliente(){
-  ['nc-nombre','nc-rnc','nc-email','nc-tel','nc-dir'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  notif('↺ Formulario limpiado','ok');
+
+// ── EDITAR CLIENTE ──
+function abrirEditar(c){
+  document.getElementById('ec-id').value=c.id;
+  document.getElementById('ec-nombre').value=c.nombre||'';
+  document.getElementById('ec-rnc').value=c.rnc||'';
+  document.getElementById('ec-email').value=c.email||'';
+  document.getElementById('ec-tel').value=c.telefono||'';
+  document.getElementById('ec-dir').value=c.direccion||'';
+  // Seleccionar plan correcto
+  const planSel=document.getElementById('ec-plan');
+  for(let i=0;i<planSel.options.length;i++){if(planSel.options[i].value===c.plan||planSel.options[i].text===c.plan){planSel.selectedIndex=i;break;}}
+  // Seleccionar ciclo correcto
+  const cicloSel=document.getElementById('ec-ciclo');
+  for(let i=0;i<cicloSel.options.length;i++){if(parseInt(cicloSel.options[i].value)===c.dia_ciclo){cicloSel.selectedIndex=i;break;}}
+  // Estado
+  const estSel=document.getElementById('ec-estado');
+  for(let i=0;i<estSel.options.length;i++){if(estSel.options[i].value===c.estado){estSel.selectedIndex=i;break;}}
+  document.getElementById('modal-edit-cliente').classList.add('open');
+}
+
+function cerrarModal(){
+  document.getElementById('modal-edit-cliente').classList.remove('open');
+}
+
+async function guardarEdicionCliente(){
+  const id=document.getElementById('ec-id').value;
+  if(!id){notif('Error: ID no encontrado','err');return;}
+  const emailVal=document.getElementById('ec-email').value.trim();
+  const datos={
+    nombre:document.getElementById('ec-nombre').value.trim(),
+    rnc:document.getElementById('ec-rnc').value.trim()||null,
+    email:emailVal||null,
+    telefono:document.getElementById('ec-tel').value.trim()||null,
+    direccion:document.getElementById('ec-dir').value.trim()||null,
+    plan:document.getElementById('ec-plan').value,
+    dia_ciclo:parseInt(document.getElementById('ec-ciclo').value),
+    estado:document.getElementById('ec-estado').value
+  };
+  const{error}=await sb.from('clientes').update(datos).eq('id',id);
+  if(error){notif('Error: '+error.message,'err');console.error(error);return;}
+  notif('✓ Cliente actualizado','ok');
+  cerrarModal();
+  cargarClientes();
 }
 
 async function cargarFacturacion(){
@@ -458,7 +577,10 @@ async function crearFactura(){
   const cid=document.getElementById('nf-cliente').value,con=document.getElementById('nf-concepto').value.trim(),m=parseFloat(document.getElementById('nf-monto').value)||0;
   if(!cid||!con||!m){notif('⚠️ Completa todos los campos','err');return;}
   const{error}=await sb.from('facturas').insert({cliente_id:cid,numero:'FAC-'+Date.now().toString().slice(-6),concepto:con,monto_rd:m,fecha_vencimiento:document.getElementById('nf-vence').value||null});
-  if(error){notif('Error','err');return;}notif('✓ Factura creada','ok');tog('form-nf');cargarFacturacion();
+  if(error){notif('Error: '+error.message,'err');return;}
+  notif('✓ Factura creada','ok');
+  document.getElementById('nf-concepto').value='';document.getElementById('nf-monto').value='';document.getElementById('nf-vence').value='';
+  tog('form-nf');cargarFacturacion();
 }
 
 async function marcarPagada(id){
