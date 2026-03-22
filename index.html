@@ -227,8 +227,8 @@
         <div id="form-nc" style="display:none" class="card"><div class="card-title">Nuevo Cliente</div>
           <div class="fg-row"><div class="fgg"><label>Nombre *</label><input type="text" id="nc-nombre" placeholder="Nombre o razón social"></div><div class="fgg"><label>RNC</label><input type="text" id="nc-rnc" placeholder="000-0000000-0"></div></div>
           <div class="fg-row"><div class="fgg"><label>Email</label><input type="email" id="nc-email"></div><div class="fgg"><label>Teléfono</label><input type="tel" id="nc-tel"></div></div>
-          <div class="fg-row"><div class="fgg"><label>Plan</label><select id="nc-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div><div class="fgg"><label>Día ciclo</label><select id="nc-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div></div>
-          <div style="display:flex;gap:8px"><button class="btn btn-green" onclick="crearCliente()">✓ Guardar</button><button class="btn btn-ghost" onclick="tog('form-nc')">Cancelar</button></div>
+        <div class="fgg"><label>Dirección</label><input type="text" id="nc-dir" placeholder="Calle, número, sector, ciudad"></div>  <div class="fg-row"><div class="fgg"><label>Plan</label><select id="nc-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div><div class="fgg"><label>Día ciclo</label><select id="nc-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div></div>
+          <div style="display:flex;gap:8px"><button class="btn btn-green" onclick="crearCliente()">✓ Guardar</button><button class="btn btn-ghost" onclick="limpiarFormCliente()">↺ Limpiar</button><button class="btn btn-ghost" onclick="tog('form-nc')">Cancelar</button></div>
         </div>
         <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-clientes"><thead><tr><th>Nombre</th><th>Plan</th><th>Teléfono</th><th>Ciclo</th><th>Estado</th></tr></thead><tbody><tr><td colspan="5"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
       </div>
@@ -434,9 +434,16 @@ async function cargarClientes(){
 }
 
 async function crearCliente(){
-  const n=document.getElementById('nc-nombre').value.trim();if(!n){notif('⚠️ Nombre requerido','err');return;}
-  const{error}=await sb.from('clientes').insert({nombre:n,rnc:document.getElementById('nc-rnc').value,email:document.getElementById('nc-email').value,telefono:document.getElementById('nc-tel').value,plan:document.getElementById('nc-plan').value,dia_ciclo:parseInt(document.getElementById('nc-ciclo').value)});
-  if(error){notif('Error al crear','err');return;}notif('✓ Cliente creado','ok');tog('form-nc');cargarClientes();
+  const nombre=document.getElementById('nc-nombre').value.trim();
+  if(!nombre){notif('⚠️ Nombre requerido','err');return;}
+  const datos={nombre,rnc:(document.getElementById('nc-rnc').value||'').trim(),email:(document.getElementById('nc-email').value||'').trim(),telefono:(document.getElementById('nc-tel').value||'').trim(),direccion:(document.getElementById('nc-dir').value||'').trim(),plan:document.getElementById('nc-plan').value,dia_ciclo:parseInt(document.getElementById('nc-ciclo').value)};
+  const{error}=await sb.from('clientes').insert(datos);
+  if(error){notif('Error: '+error.message,'err');return;}
+  notif('✓ Cliente creado','ok');limpiarFormCliente();tog('form-nc');cargarClientes();
+}
+function limpiarFormCliente(){
+  ['nc-nombre','nc-rnc','nc-email','nc-tel','nc-dir'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  notif('↺ Formulario limpiado','ok');
 }
 
 async function cargarFacturacion(){
