@@ -398,8 +398,7 @@ function mostrarAuth(){document.getElementById('auth-screen').style.display='fle
 
 async function iniciar(){
   const{data:p}=await sb.from('perfiles').select('*').eq('id',usr.id).single();
-  if(!p){const nombre=usr.user_metadata?.nombre||usr.email.split('@')[0];await sb.from('perfiles').insert({id:usr.id,nombre,email:usr.email,rol:'cliente'});perfil={id:usr.id,nombre,email:usr.email,rol:'cliente'};}
-  else perfil=p;
+  if(!p){const nombre=usr.user_metadata?.nombre||usr.email.split('@')[0];await sb.from('perfiles').upsert({id:usr.id,nombre,email:usr.email,rol:'cliente'},{onConflict:'id',ignoreDuplicates:true});const{data:p2}=await sb.from('perfiles').select('*').eq('id',usr.id).single();perfil=p2||{id:usr.id,nombre,email:usr.email,rol:'cliente'};}
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-shell').classList.add('visible');
   document.getElementById('tb-user').textContent=perfil.nombre||usr.email;
