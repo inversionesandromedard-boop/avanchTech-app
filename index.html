@@ -1036,7 +1036,7 @@ async function registrarPago(){
   if(mod===1){av=m*0.75;ko=m*0.25;vic=0;}
   else if(mod===2){vic=m*0.65;av=m*0.26;ko=m*0.09;}
   else{av=m;ko=0;vic=0;}
-  const{error}=await sb.from('pagos').insert({factura_id:document.getElementById('pago-fac').value||null,monto:m,metodo:document.getElementById('pago-met').value,referencia:document.getElementById('pago-ref').value,modelo:mod,avanch_parte:av,socio_parte:ko,vicortiz_parte:vic});
+  const{error}=await sb.from('pagos').insert({factura_id:document.getElementById('pago-fac').value||null,monto_total:m,monto:m,metodo:document.getElementById('pago-met').value,referencia:document.getElementById('pago-ref').value,modelo:mod,avanch_parte:av,socio_parte:ko,vicortiz_parte:vic});
   if(error){notif('Error','err');return;}notif('✓ Registrado','ok');document.getElementById('pago-monto').value='';document.getElementById('pago-ref').value='';cargarPagos();
   registrarLog('Pago registrado','pagos','Monto: RD$'+fmt(m)+' — Modelo: M'+mod,'pagos');
 }
