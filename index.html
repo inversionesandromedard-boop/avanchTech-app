@@ -1014,8 +1014,7 @@ async function cargarFacturacion(){
 async function crearFactura(){
   const cid=document.getElementById('nf-cliente').value,con=document.getElementById('nf-concepto').value.trim(),m=parseFloat(document.getElementById('nf-monto').value)||0;
   if(!cid||!con||!m){notif('⚠️ Completa campos','err');return;}
-  const{error}=await sb.from('facturas').insert({cliente_id:cid,numero:'FAC-'+Date.now().toString().slice(-6),concepto:con,monto_rd:m,fecha_vencimiento:document.getElementById('nf-vence').value||null});
-  if(error){notif('Error: '+error.message,'err');return;}notif('✓ Factura creada','ok');document.getElementById('nf-concepto').value='';document.getElementById('nf-monto').value='';tog('form-nf');cargarFacturacion();
+const{error}=await sb.from('facturas').insert({cliente_id:cid,numero:'FAC-'+Date.now().toString().slice(-6),concepto:con,monto:m,monto_rd:m,estado:'pendiente',fecha_emision:new Date().toISOString().split('T')[0],fecha_vencimiento:document.getElementById('nf-vence').value||null});  if(error){notif('Error: '+error.message,'err');return;}notif('✓ Factura creada','ok');document.getElementById('nf-concepto').value='';document.getElementById('nf-monto').value='';tog('form-nf');cargarFacturacion();
   registrarLog('Factura creada','facturas','Concepto: '+con+' — RD$'+fmt(m),'facturas');
 }
 async function marcarPagada(id){const{error}=await sb.from('facturas').update({estado:'pagada',fecha_pago:new Date().toISOString()}).eq('id',id);if(error){notif('Error','err');return;}notif('✓ Pagada','ok');cargarFacturacion();registrarLog('Factura pagada','facturas','Factura marcada como pagada','facturas',id);}
