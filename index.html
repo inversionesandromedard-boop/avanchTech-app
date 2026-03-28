@@ -136,6 +136,14 @@
       <button class="btn-auth" onclick="doLogin()" id="btn-login">Iniciar sesión</button>
       <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">¿Olvidaste tu contraseña? <span style="color:var(--blue3);cursor:pointer" onclick="doReset()">Restablecer</span></div>
     </div>
+
+<div id="form-mfa" style="display:none">
+  <div style="text-align:center;margin-bottom:16px"><div style="font-size:36px;margin-bottom:8px">🔐</div><div style="font-family:var(--ff2);font-size:15px;font-weight:700;margin-bottom:4px">Verificación 2FA</div><div style="font-size:11px;color:var(--muted)">Ingresa el código de 6 dígitos de tu app de autenticación</div></div>
+  <div class="fg"><label>Código TOTP</label><input type="text" id="mfa-login-code" placeholder="000000" maxlength="6" style="text-align:center;font-size:24px;letter-spacing:12px;font-family:var(--ff2);font-weight:700" onkeypress="if(event.key==='Enter')verificarMFALogin()"></div>
+  <button class="btn-auth" onclick="verificarMFALogin()" id="btn-mfa-verify">🔓 Verificar</button>
+  <div style="text-align:center;margin-top:12px"><span style="color:var(--muted);font-size:11px;cursor:pointer" onclick="cancelarMFA()">← Volver al login</span></div>
+</div>
+    
     <div id="form-register" style="display:none">
       <div class="fg"><label>Nombre completo</label><input type="text" id="reg-nombre" placeholder="Tu nombre o razón social"></div>
       <div class="fg"><label>Correo electrónico</label><input type="email" id="reg-email" placeholder="correo@empresa.com"></div>
