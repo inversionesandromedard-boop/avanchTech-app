@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Avanch App</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#07090e;--bg2:#0d1017;--bg3:#131720;--surface:#191e2a;--surface2:#1f2635;--border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);--text:#eceef8;--muted:#7b849a;--muted2:#a0a8bc;--blue:#2563eb;--blue2:#3b82f6;--blue3:#60a5fa;--green:#059669;--green2:#10b981;--green3:#34d399;--gold:#d97706;--gold3:#fbbf24;--red:#dc2626;--red2:#ef4444;--purple:#7c3aed;--purple3:#a78bfa;--ff:'DM Sans',system-ui,sans-serif;--ff2:'Syne',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;font-family:var(--ff);background:var(--bg);color:var(--text);font-size:13px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
+.auth-screen::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(37,99,235,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(37,99,235,.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+.auth-orb{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none}
+.orb1{width:500px;height:400px;background:rgba(37,99,235,.08);top:-100px;left:50%;transform:translateX(-50%)}
+.orb2{width:300px;height:300px;background:rgba(124,58,237,.05);bottom:0;right:5%}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:36px;width:100%;max-width:420px;position:relative;z-index:1;animation:fadeUp .5s ease}
+.auth-mark{width:40px;height:40px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--ff2);font-weight:800;font-size:14px;color:#fff;box-shadow:0 0 20px rgba(37,99,235,.3);margin:0 auto 10px}
+.auth-title{font-family:var(--ff2);font-size:22px;font-weight:800;text-align:center;margin-bottom:6px}
+.auth-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:24px}
+.auth-tabs{display:flex;gap:4px;background:var(--surface);border-radius:10px;padding:4px;margin-bottom:20px}
+.auth-tab{flex:1;text-align:center;padding:8px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:all .2s}
+.auth-tab.active{background:var(--blue);color:#fff}
+.fg{margin-bottom:12px}.fg label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.fg input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;font-family:var(--ff);outline:none;transition:border-color .2s}
+.fg input:focus{border-color:var(--blue2)}
+.btn-auth{width:100%;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--ff2);margin-top:4px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-auth:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(37,99,235,.3)}
+.btn-auth:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.auth-error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--red2);margin-bottom:12px;display:none}
+.auth-error.show{display:block}
+.app-shell{display:none;grid-template-rows:56px 1fr;height:100vh}
+.app-shell.visible{display:grid}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tb-left{display:flex;align-items:center;gap:10px}
+.tb-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--ff2);font-weight:800;font-size:11px;color:#fff}
+.tb-name{font-family:var(--ff2);font-weight:700;font-size:14px}
+.tb-name span{color:var(--muted);font-size:10px;font-weight:400;margin-left:6px}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-user{font-size:11px;color:var(--muted2);background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px;display:flex;align-items:center;gap:6px}
+.tb-dot{width:6px;height:6px;background:var(--green3);border-radius:50%;animation:pulse 2s infinite}
+.tb-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--muted);cursor:pointer;font-size:11px;font-family:var(--ff);transition:all .2s}
+.tb-logout:hover{border-color:var(--red2);color:var(--red2)}
+.main{display:grid;grid-template-columns:196px 1fr;overflow:hidden}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:12px 0}
+.nav-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;padding:10px 16px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;transition:all .2s;border-left:2px solid transparent;color:var(--muted2);font-size:12px;font-weight:500}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(37,99,235,.1);color:var(--blue3);border-left-color:var(--blue)}
+.nav-icon{font-size:13px;width:16px;text-align:center}
+.content{overflow-y:auto;padding:20px}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.sec-title{font-family:var(--ff2);font-size:13px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:18px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px}
+.sc-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.sc-val{font-family:var(--ff2);font-size:19px;font-weight:700;margin-bottom:2px}
+.sc-sub{font-size:10px;color:var(--muted)}
+.sc.blue .sc-val{color:var(--blue3)}.sc.green .sc-val{color:var(--green3)}.sc.gold .sc-val{color:var(--gold3)}.sc.purple .sc-val{color:var(--purple3)}.sc.red .sc-val{color:var(--red2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.dt{width:100%;border-collapse:collapse}
+.dt th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:8px 12px;border-bottom:1px solid var(--border);text-align:left}
+.dt td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.dt tr:last-child td{border-bottom:none}
+.dt tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge.green{background:rgba(16,185,129,.15);color:var(--green3);border:1px solid rgba(16,185,129,.2)}
+.badge.gold{background:rgba(251,191,36,.12);color:var(--gold3);border:1px solid rgba(251,191,36,.2)}
+.badge.red{background:rgba(239,68,68,.12);color:var(--red2);border:1px solid rgba(239,68,68,.2)}
+.badge.blue{background:rgba(96,165,250,.12);color:var(--blue3);border:1px solid rgba(96,165,250,.2)}
+.badge.purple{background:rgba(167,139,250,.12);color:var(--purple3);border:1px solid rgba(167,139,250,.2)}
+.fgg{margin-bottom:11px}.fgg label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.fgg input,.fgg select,.fgg textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:12px;font-family:var(--ff);outline:none;transition:border-color .2s}
+.fgg input:focus,.fgg select:focus,.fgg textarea:focus{border-color:var(--blue2)}
+.fgg select option{background:var(--bg3)}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:none;border-radius:7px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--ff);transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff}.btn-primary:hover{background:#1d4ed8}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#047857}
+.btn-ghost{background:var(--surface2);color:var(--muted2);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:#b45309}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#b91c1c}
+.alert{border-radius:8px;padding:11px 14px;font-size:12px;margin-bottom:12px}
+.alert.info{background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);color:var(--blue3)}
+.alert.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);color:var(--gold3)}
+.loader{display:flex;align-items:center;justify-content:center;padding:36px;color:var(--muted);flex-direction:column;gap:10px}
+.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--blue3);border-radius:50%;animation:spin .7s linear infinite}
+.notif{position:fixed;bottom:20px;right:20px;background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:10px 16px;font-size:12px;color:var(--text);z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;box-shadow:0 8px 24px rgba(0,0,0,.4);pointer-events:none}
+.notif.show{opacity:1;transform:translateY(0)}.notif.ok{border-left:3px solid var(--green3)}.notif.err{border-left:3px solid var(--red2)}
+.inv-hero{background:linear-gradient(135deg,rgba(37,99,235,.1),rgba(124,58,237,.08));border:1px solid rgba(37,99,235,.2);border-radius:16px;padding:24px;margin-bottom:18px}
+.inv-hero-title{font-family:var(--ff2);font-size:18px;font-weight:800;margin-bottom:6px}
+.inv-hero-sub{font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:16px}
+.isr{background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.18);border-radius:9px;padding:13px;margin-top:10px}
+.isr-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px}
+.isr-row .l{color:var(--muted)}.isr-row .v{color:var(--text);font-weight:600}
+.isr-total{display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border);margin-top:6px}
+.isr-total .l{font-weight:600}.isr-total .v{font-family:var(--ff2);font-size:15px;font-weight:700;color:var(--green3)}
+.chart-container{position:relative;width:100%;height:260px;margin-top:8px}
+.rules-list{display:flex;flex-direction:column;gap:8px}
+.rule-item{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)}
+.rule-item .rl{font-size:12px;color:var(--muted2)}.rule-item .rv{font-family:var(--ff2);font-weight:700;font-size:14px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;width:100%;max-width:520px;animation:fadeUp .3s ease;max-height:90vh;overflow-y:auto}
+.modal-title{font-family:var(--ff2);font-size:14px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1}
+.modal-close:hover{color:var(--text)}
+@media(max-width:640px){.main{grid-template-columns:1fr}.sidebar{display:none}.fg-row{grid-template-columns:1fr}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-orb orb1"></div><div class="auth-orb orb2"></div>
+  <div class="auth-box">
+    <div class="auth-mark">AT</div>
+    <div class="auth-title">Avanch App</div>
+    <div class="auth-sub">Portal de facturación, clientes e inversión</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" id="tab-login" onclick="switchAuth('login')">Iniciar sesión</div>
+      <div class="auth-tab" id="tab-register" onclick="switchAuth('register')">Registrarse</div>
+    </div>
+    <div class="auth-error" id="auth-error"></div>
+    <div id="form-login">
+      <div class="fg"><label>Correo electrónico</label><input type="email" id="login-email" placeholder="correo@empresa.com" onkeypress="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><label>Contraseña</label><input type="password" id="login-password" placeholder="Tu contraseña" onkeypress="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn-auth" onclick="doLogin()" id="btn-login">Iniciar sesión</button>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">¿Olvidaste tu contraseña? <span style="color:var(--blue3);cursor:pointer" onclick="doReset()">Restablecer</span></div>
+    </div>
+
+<div id="form-mfa" style="display:none">
+  <div style="text-align:center;margin-bottom:16px"><div style="font-size:36px;margin-bottom:8px">🔐</div><div style="font-family:var(--ff2);font-size:15px;font-weight:700;margin-bottom:4px">Verificación 2FA</div><div style="font-size:11px;color:var(--muted)">Ingresa el código de 6 dígitos de tu app de autenticación</div></div>
+  <div class="fg"><label>Código TOTP</label><input type="text" id="mfa-login-code" placeholder="000000" maxlength="6" style="text-align:center;font-size:24px;letter-spacing:12px;font-family:var(--ff2);font-weight:700" onkeypress="if(event.key==='Enter')verificarMFALogin()"></div>
+  <button class="btn-auth" onclick="verificarMFALogin()" id="btn-mfa-verify">🔓 Verificar</button>
+  <div style="text-align:center;margin-top:12px"><span style="color:var(--muted);font-size:11px;cursor:pointer" onclick="cancelarMFA()">← Volver al login</span></div>
+</div>
+    
+    <div id="form-register" style="display:none">
+      <div class="fg"><label>Nombre completo</label><input type="text" id="reg-nombre" placeholder="Tu nombre o razón social"></div>
+      <div class="fg"><label>Correo electrónico</label><input type="email" id="reg-email" placeholder="correo@empresa.com"></div>
+      <div class="fg"><label>Contraseña</label><input type="password" id="reg-password" placeholder="Mínimo 8 caracteres"></div>
+      <div class="fg"><label>Teléfono</label><input type="tel" id="reg-tel" placeholder="809-000-0000"></div>
+      <button class="btn-auth" onclick="doRegister()" id="btn-register">Crear cuenta</button>
+    </div>
+    <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--muted)">Avanch Technology SRL · Santo Domingo Este, RD</div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR CLIENTE -->
+<div class="modal-overlay" id="modal-edit-cliente">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Cliente <button class="modal-close" onclick="cerrarModal()">✕</button></div>
+
+<!-- MODAL CONTRATO -->
+<div class="modal-overlay" id="modal-contrato">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">📄 Contrato de Inversión <button class="modal-close" onclick="cerrarContrato()">✕</button></div>
+    <div id="contrato-body" style="background:var(--bg3);border-radius:10px;padding:20px;font-size:12px;line-height:1.8;max-height:400px;overflow-y:auto;margin-bottom:14px;border:1px solid var(--border)"></div>
+    <div id="contrato-firma" style="display:none">
+      <div class="alert warn">⚠️ Al firmar este contrato, aceptas los términos descritos. Esta acción es irreversible.</div>
+      <div class="fgg"><label>Nombre completo (firma digital)</label><input type="text" id="firma-nombre" placeholder="Escribe tu nombre completo"></div>
+      <button class="btn btn-green" onclick="firmarContrato()">✍️ Firmar contrato</button>
+    </div>
+    <div id="contrato-firmado" style="display:none">
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px;color:var(--green3);font-size:12px">✅ Contrato firmado digitalmente</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" onclick="imprimirContrato()">🖨️ Imprimir</button>
+      <button class="btn btn-ghost" onclick="cerrarContrato()">Cerrar</button>
+    </div>
+  </div>
+</div>
+    <input type="hidden" id="ec-id">
+    <div class="fg-row">
+      <div class="fgg"><label>Nombre *</label><input type="text" id="ec-nombre"></div>
+      <div class="fgg"><label>RNC</label><input type="text" id="ec-rnc"></div>
+    </div>
+    <div class="fg-row">
+      <div class="fgg"><label>Email</label><input type="email" id="ec-email"></div>
+      <div class="fgg"><label>Teléfono</label><input type="tel" id="ec-tel"></div>
+    </div>
+    <div class="fgg"><label>Dirección</label><input type="text" id="ec-dir"></div>
+    <div class="fg-row">
+      <div class="fgg"><label>Plan</label><select id="ec-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div>
+      <div class="fgg"><label>Día ciclo</label><select id="ec-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div>
+    </div>
+    <div class="fgg"><label>Estado</label><select id="ec-estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option><option value="suspendido">Suspendido</option></select></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-green" onclick="guardarEdicionCliente()">✓ Guardar</button>
+      <button class="btn btn-ghost" onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-shell" id="app-shell">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-mark">AT</div><div class="tb-name">Avanch App <span id="tb-rol"></span></div></div>
+    <div class="tb-right">
+      <div class="tb-user"><div class="tb-dot"></div><span id="tb-user">—</span></div>
+      <button class="tb-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content" id="content">
+
+      <!-- INICIO / DASHBOARD -->
+      <div class="tab-panel active" id="tab-inicio">
+        <div class="sec-title">📊 Dashboard Financiero</div>
+        <div class="stats-grid" id="stats-inicio"><div class="loader"><div class="spin"></div></div></div>
+
+        <!-- ADMIN DASHBOARD -->
+        <div id="dash-admin" style="display:none">
+          <!-- SECCIÓN: INGRESOS POR SERVICIOS -->
+          <div style="font-family:var(--ff2);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:4px">📊 Ingresos por servicios (facturación)</div>
+          <div class="g2">
+            <div class="card">
+              <div class="card-title">📈 Ingresos mensuales — Servicios</div>
+              <div class="chart-container"><canvas id="chart-ingresos"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">🥧 Distribución por modelo</div>
+              <div class="chart-container"><canvas id="chart-modelos"></canvas></div>
+            </div>
+          </div>
+          <div class="g2">
+            <div class="card">
+              <div class="card-title">💰 Flujo: Avanch / Komultisoft / VicOrtiz</div>
+              <div class="chart-container"><canvas id="chart-flujo"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">🏆 Top clientes por facturación</div>
+              <div style="overflow-x:auto"><table class="dt" id="t-top-clientes"><thead><tr><th>Cliente</th><th>Facturado</th><th>Pagado</th><th>Pendiente</th></tr></thead><tbody><tr><td colspan="4"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN: FONDO DE INVERSIÓN -->
+          <div style="font-family:var(--ff2);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:18px">🏦 Fondo de inversión (capital de terceros)</div>
+          <div class="g2">
+            <div class="card">
+              <div class="card-title">📊 Composición del fondo</div>
+              <div class="chart-container"><canvas id="chart-fondo-resumen"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">⏰ Próximos vencimientos</div>
+              <div style="overflow-x:auto"><table class="dt" id="t-vencimientos"><thead><tr><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Vence</th></tr></thead><tbody><tr><td colspan="4"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN: SISTEMA -->
+          <div style="font-family:var(--ff2);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;margin-top:18px">⚙️ Sistema</div>
+          <div class="g2">
+            <div class="card"><div class="card-title">Estado del ecosistema</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding:4px 0">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>tienda.avanchtechnology.com</span><span class="badge green">● Activo</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>factura.avanchtechnology.com</span><span class="badge green">● Activo</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>avanchtechnology.com</span><span class="badge green">● Activo</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>app.avanchtechnology.com</span><span class="badge blue">● Online</span></div>
+              </div>
+            </div>
+            <div class="card"><div class="card-title">🕐 Actividad reciente</div>
+              <div id="actividad-reciente" style="font-size:12px;color:var(--muted)">Cargando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLIENTE/INVERSIONISTA simple -->
+        <div id="dash-simple" style="display:none">
+          <div class="g2">
+            <div class="card"><div class="card-title">Estado del ecosistema</div>
+              <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;padding:4px 0">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>tienda.avanchtechnology.com</span><span class="badge green">● Activo</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>avanchtechnology.com</span><span class="badge green">● Activo</span></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>app.avanchtechnology.com</span><span class="badge blue">● Online</span></div>
+              </div>
+            </div>
+            <div class="card"><div class="card-title">Actividad reciente</div><div id="actividad" style="display:flex;align-items:center;justify-content:center;height:80px;color:var(--muted);font-size:12px">Sin actividad reciente</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIS FACTURAS (cliente) -->
+      <div class="tab-panel" id="tab-facturas">
+        <div class="sec-title">🧾 Mis Facturas</div>
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+          <div class="sc gold"><div class="sc-label">Pendientes</div><div class="sc-val" id="f-pend">—</div></div>
+          <div class="sc green"><div class="sc-label">Pagadas</div><div class="sc-val" id="f-pag">—</div></div>
+          <div class="sc blue"><div class="sc-label">Total deuda</div><div class="sc-val" id="f-total">—</div></div>
+          <div class="sc purple"><div class="sc-label">Último pago</div><div class="sc-val" id="f-ultimo" style="font-size:12px">—</div></div>
+          <div class="sc"><div class="sc-label">Próximo corte</div><div class="sc-val" id="f-corte" style="font-size:12px">—</div></div>
+        </div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-facturas"><thead><tr><th>Número</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Vencimiento</th></tr></thead><tbody><tr><td colspan="5"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- MI PORTAFOLIO (inversionista) -->
+      <div class="tab-panel" id="tab-portafolio">
+        <div class="sec-title">📊 Mi Portafolio de Inversión</div>
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+          <div class="sc green"><div class="sc-label">Total invertido</div><div class="sc-val" id="pt-invertido">RD$0.00</div></div>
+          <div class="sc gold"><div class="sc-label">Ganancia acumulada</div><div class="sc-val" id="pt-ganancia">RD$0.00</div></div>
+          <div class="sc blue"><div class="sc-label">Cobro al vencimiento</div><div class="sc-val" id="pt-cobro">RD$0.00</div></div>
+          <div class="sc purple"><div class="sc-label">Inversiones activas</div><div class="sc-val" id="pt-activas">0</div></div>
+          <div class="sc"><div class="sc-label">Tasa aplicada</div><div class="sc-val" id="pt-tasa" style="color:var(--green3)">7.0%</div><div class="sc-sub">Anual (BC-RD)</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-title">📈 Ganancia por ciclo</div><div class="chart-container"><canvas id="chart-ganancias"></canvas></div></div>
+          <div class="card"><div class="card-title">🥧 Distribución por propósito</div><div class="chart-container"><canvas id="chart-distribucion"></canvas></div></div>
+        </div>
+        <div class="card"><div class="card-title">Mis inversiones</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-mis-inversiones"><thead><tr><th>Fecha</th><th>Monto</th><th>Plazo</th><th>Ganancia est.</th><th>Vencimiento</th><th>Estado</th></tr></thead><tbody><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Sin inversiones</td></tr></tbody></table></div>
+        </div>
+        <div class="card"><div class="card-title">Movimientos</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-mis-movimientos"><thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Descripción</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">Sin movimientos</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- MIS CONTRATOS (inversionista/cliente) -->
+      <div class="tab-panel" id="tab-contratos">
+        <div class="sec-title">📄 Mis Contratos</div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-mis-contratos"><thead><tr><th>Número</th><th>Tipo</th><th>Monto</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Sin contratos</td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- MIS ESTADOS DE CUENTA (inversionista/cliente) -->
+      <div class="tab-panel" id="tab-estados">
+        <div class="sec-title">📋 Mis Estados de Cuenta</div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-mis-estados"><thead><tr><th>Periodo</th><th>Tipo</th><th>Fecha generado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">Sin estados de cuenta</td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- SIMULADOR / INVERSIÓN -->
+      <div class="tab-panel" id="tab-inversion">
+        <div class="sec-title">💰 Inversión — Simulador y Solicitud</div>
+        <div class="inv-hero">
+          <div class="inv-hero-title">Avanch Invest</div>
+          <div class="inv-hero-sub">Invierte en el ecosistema Avanch Technology con transparencia total y retornos regulados.</div>
+          <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0">
+            <div class="sc green"><div class="sc-label">Tasa BC-RD</div><div class="sc-val" id="inv-tasa">7.0%</div><div class="sc-sub">Anual (inversionista)</div></div>
+            <div class="sc blue"><div class="sc-label">Plazo mín.</div><div class="sc-val">1 mes</div></div>
+            <div class="sc purple"><div class="sc-label">Techo ganancia</div><div class="sc-val" id="inv-techo">—</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📜 Reglas del fondo</div>
+          <div class="rules-list">
+            <div class="rule-item"><span class="rl">Rendimiento anual del fondo</span><span class="rv" id="r-rend" style="color:var(--green3)">15.0%</span></div>
+            <div class="rule-item"><span class="rl">Tasa para inversionista (BC-RD)</span><span class="rv" id="r-tasa" style="color:var(--blue3)">7.0%</span></div>
+            <div class="rule-item"><span class="rl">Ganancia Avanch (spread)</span><span class="rv" id="r-spread" style="color:var(--purple3)">8.0%</span></div>
+            <div class="rule-item"><span class="rl">Techo de ganancia</span><span class="rv" id="r-techo" style="color:var(--gold3)">RD$22,470.00</span></div>
+            <div class="rule-item"><span class="rl">Exposición máxima por inversionista</span><span class="rv" id="r-expo">30%</span></div>
+            <div class="rule-item"><span class="rl">Reserva de liquidez</span><span class="rv" id="r-reserva">20%</span></div>
+            <div class="rule-item"><span class="rl">Penalización retiro anticipado</span><span class="rv" id="r-penal" style="color:var(--red2)">5.0%</span></div>
+            <div class="rule-item"><span class="rl">Plazo mínimo</span><span class="rv" id="r-plazo">1 mes</span></div>
+          </div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-title">🧮 Simulador</div>
+            <div class="fgg"><label>Monto (RD$)</label><input type="number" id="sim-monto" placeholder="0.00" oninput="simular()"></div>
+            <div class="fgg"><label>Plazo</label><select id="sim-plazo" onchange="simular()"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option><option value="24">24 meses</option></select></div>
+            <div class="isr" id="sim-res" style="display:none">
+              <div class="isr-row"><span class="l">Capital</span><span class="v" id="sr-cap">—</span></div>
+              <div class="isr-row"><span class="l">Ganancia inversionista</span><span class="v" id="sr-gan">—</span></div>
+              <div class="isr-row"><span class="l">Ganancia Avanch</span><span class="v" id="sr-gan-av" style="color:var(--purple3)">—</span></div>
+              <div class="isr-row"><span class="l">Techo permitido</span><span class="v" id="sr-techo">—</span></div>
+              <div class="isr-total"><span class="l">Total a cobrar</span><span class="v" id="sr-total">—</span></div>
+            </div>
+          </div>
+          <div class="card"><div class="card-title">📤 Solicitar Inversión</div>
+            <div class="alert warn">⚠️ Requiere aprobación del administrador.</div>
+            <div class="fgg"><label>Monto (RD$)</label><input type="number" id="sol-monto" placeholder="0.00"></div>
+            <div class="fg-row">
+              <div class="fgg"><label>Plazo</label><select id="sol-plazo"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6" selected>6 meses</option><option value="12">12 meses</option><option value="24">24 meses</option></select></div>
+              <div class="fgg"><label>Propósito</label><select id="sol-prop"><option>Expansión producto</option><option>Nuevo producto</option><option>Marketing digital</option><option>Infraestructura técnica</option><option>Capital de trabajo</option></select></div>
+            </div>
+            <div class="fgg"><label>Descripción</label><textarea id="sol-desc" placeholder="Explica el uso y retorno esperado..." style="min-height:70px;resize:vertical"></textarea></div>
+            <button class="btn btn-primary" onclick="enviarSolicitud()">📤 Enviar solicitud</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADMIN: CLIENTES -->
+      <div class="tab-panel" id="tab-clientes">
+        <div class="sec-title">👥 Clientes</div>
+        <div style="margin-bottom:12px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="tog('form-nc')">+ Nuevo</button>
+          <button class="btn btn-ghost" onclick="cargarClientes()">↻ Actualizar</button>
+        </div>
+        <div id="form-nc" style="display:none" class="card">
+          <div class="card-title">Nuevo Cliente</div>
+          <div class="fg-row"><div class="fgg"><label>Nombre *</label><input type="text" id="nc-nombre"></div><div class="fgg"><label>RNC</label><input type="text" id="nc-rnc"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Email</label><input type="email" id="nc-email"></div><div class="fgg"><label>Teléfono</label><input type="tel" id="nc-tel"></div></div>
+          <div class="fgg"><label>Dirección</label><input type="text" id="nc-dir"></div>
+          <div class="fg-row"><div class="fgg"><label>Plan</label><select id="nc-plan"><option>Plan Iniciado — RD$1,500/mes</option><option>Plan Experto — RD$2,500/mes</option><option>Plan Grande PYMES — RD$3,500/mes</option></select></div><div class="fgg"><label>Día ciclo</label><select id="nc-ciclo"><option value="3">3</option><option value="5">5</option><option value="10">10</option><option value="20">20</option><option value="25">25</option></select></div></div>
+          <div style="display:flex;gap:8px"><button class="btn btn-green" onclick="crearCliente()">✓ Guardar</button><button class="btn btn-ghost" onclick="limpiarFormCliente()">↺</button><button class="btn btn-ghost" onclick="tog('form-nc')">Cancelar</button></div>
+        </div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-clientes"><thead><tr><th>Nombre</th><th>Plan</th><th>Teléfono</th><th>Ciclo</th><th>Estado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ADMIN: FACTURACIÓN -->
+      <div class="tab-panel" id="tab-facturacion">
+        <div class="sec-title">🧾 Facturación</div>
+        <div style="margin-bottom:12px;display:flex;gap:8px"><button class="btn btn-primary" onclick="tog('form-nf')">+ Nueva factura</button><button class="btn btn-ghost" onclick="cargarFacturacion()">↻</button></div>
+        <div id="form-nf" style="display:none" class="card"><div class="card-title">Nueva Factura</div>
+          <div class="fg-row"><div class="fgg"><label>Cliente *</label><select id="nf-cliente"><option value="">— Seleccionar —</option></select></div><div class="fgg"><label>Concepto *</label><input type="text" id="nf-concepto"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Monto RD$ *</label><input type="number" id="nf-monto"></div><div class="fgg"><label>Vencimiento</label><input type="date" id="nf-vence"></div></div>
+          <div style="display:flex;gap:8px"><button class="btn btn-green" onclick="crearFactura()">✓ Crear</button><button class="btn btn-ghost" onclick="tog('form-nf')">Cancelar</button></div>
+        </div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-facturacion"><thead><tr><th>Cliente</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Venc.</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ADMIN: PAGOS -->
+      <div class="tab-panel" id="tab-pagos">
+        <div class="sec-title">💳 Pagos</div>
+        <div class="card"><div class="card-title">Registrar Pago</div>
+          <div class="fg-row"><div class="fgg"><label>Factura</label><select id="pago-fac"><option value="">— Opcional —</option></select></div><div class="fgg"><label>Monto RD$ *</label><input type="number" id="pago-monto"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Método</label><select id="pago-met"><option>Transferencia</option><option>Depósito</option><option>Efectivo</option></select></div><div class="fgg"><label>Modelo</label><select id="pago-mod"><option value="1">M1 — Facturación (75/25)</option><option value="2">M2 — e-CF (VicOrtiz 65/Avanch 26/Komulti 9)</option><option value="3">M3 — Tienda (100%)</option></select></div></div>
+          <div class="fgg"><label>Referencia</label><input type="text" id="pago-ref"></div>
+          <button class="btn btn-green" onclick="registrarPago()">✓ Registrar</button>
+        </div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-pagos"><thead><tr><th>Fecha</th><th>Monto</th><th>Método</th><th>Modelo</th><th>Avanch</th><th>Komultisoft</th><th>VicOrtiz</th></tr></thead><tbody><tr><td colspan="7"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+        <!-- Reportes de corte -->
+        <div style="margin-top:14px;margin-bottom:12px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-gold" onclick="generarReporteCorte()">📋 Generar reporte de corte (día 25)</button>
+          <button class="btn btn-ghost" onclick="cargarReportesCorte()">↻ Ver reportes</button>
+        </div>
+        <div class="card"><div class="card-title">📊 Reportes de corte mensual — Corte: día 25 | Pago: día 30</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-reportes"><thead><tr><th>Periodo</th><th>Recaudado</th><th>Avanch</th><th>Komultisoft</th><th>VicOrtiz</th><th>Corte</th><th>Pago</th><th>Estado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">Sin reportes</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ADMIN: LEADS -->
+      <div class="tab-panel" id="tab-leads">
+        <div class="sec-title">🎯 Leads</div>
+        <div style="margin-bottom:12px"><button class="btn btn-ghost" onclick="cargarLeads()">↻ Actualizar</button></div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-leads"><thead><tr><th>Nombre</th><th>Email</th><th>Plan</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ADMIN: PEDIDOS -->
+      <div class="tab-panel" id="tab-pedidos">
+        <div class="sec-title">🛒 Pedidos</div>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="sc gold"><div class="sc-label">Pendientes</div><div class="sc-val" id="pd-p">—</div></div>
+          <div class="sc green"><div class="sc-label">Completados</div><div class="sc-val" id="pd-c">—</div></div>
+          <div class="sc blue"><div class="sc-label">Total hoy</div><div class="sc-val" id="pd-h">—</div></div>
+        </div>
+        <div class="card"><div style="overflow-x:auto"><table class="dt" id="t-pedidos"><thead><tr><th>Cliente</th><th>Total</th><th>Entrega</th><th>Estado</th><th>Fecha</th><th>Acción</th></tr></thead><tbody><tr><td colspan="6"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div></div>
+      </div>
+
+      <!-- ADMIN: FONDO -->
+      <div class="tab-panel" id="tab-fondo">
+        <div class="sec-title">🏦 Fondo de Inversión — Administración</div>
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+          <div class="sc green"><div class="sc-label">Capital total</div><div class="sc-val" id="fd-capital">RD$0.00</div></div>
+          <div class="sc purple"><div class="sc-label">Ganancia Avanch</div><div class="sc-val" id="fd-ganancia-av">RD$0.00</div></div>
+          <div class="sc gold"><div class="sc-label">Pagado a inversionistas</div><div class="sc-val" id="fd-pagado">RD$0.00</div></div>
+          <div class="sc blue"><div class="sc-label">Inversiones activas</div><div class="sc-val" id="fd-activas">0</div></div>
+          <div class="sc red"><div class="sc-label">Pendientes</div><div class="sc-val" id="fd-pend">0</div></div>
+        </div>
+        <div class="g2">
+          <div class="card"><div class="card-title">📊 Capital por mes</div><div class="chart-container"><canvas id="chart-fondo-barras"></canvas></div></div>
+          <div class="card"><div class="card-title">🥧 Distribución</div><div class="chart-container"><canvas id="chart-fondo-pastel"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">⚙️ Configuración de reglas</div>
+          <div class="fg-row"><div class="fgg"><label>Rendimiento anual (%)</label><input type="number" id="cf-rend" step="0.1"></div><div class="fgg"><label>Tasa inversionista (%)</label><input type="number" id="cf-tasa" step="0.1"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Techo ganancia (RD$)</label><input type="number" id="cf-techo"></div><div class="fgg"><label>Exposición máx. (%)</label><input type="number" id="cf-expo"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Reserva liquidez (%)</label><input type="number" id="cf-reserva"></div><div class="fgg"><label>Penalización retiro (%)</label><input type="number" id="cf-penal" step="0.1"></div></div>
+          <div class="fg-row"><div class="fgg"><label>Plazo mínimo (meses)</label><input type="number" id="cf-plazo"></div><div class="fgg"><label>Salario mínimo (RD$)</label><input type="number" id="cf-salmin"></div></div>
+          <button class="btn btn-primary" onclick="guardarConfigFondo()">💾 Guardar reglas</button>
+          <button class="btn btn-gold" onclick="generarEstadosCuentaMes()" style="margin-left:8px">📋 Generar estados de cuenta</button>
+        </div>
+        <div class="card"><div class="card-title">Todas las inversiones</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-todas-inversiones"><thead><tr><th>Inversionista</th><th>Monto</th><th>Plazo</th><th>Gan. Inv.</th><th>Gan. Avanch</th><th>Estado</th><th>Acción</th></tr></thead><tbody><tr><td colspan="7"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ADMIN: SEGURIDAD -->
+      <div class="tab-panel" id="tab-seguridad">
+        <div class="sec-title">🔒 Seguridad y Auditoría</div>
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+          <div class="sc blue"><div class="sc-label">Eventos hoy</div><div class="sc-val" id="sg-hoy">0</div></div>
+          <div class="sc green"><div class="sc-label">Sesiones activas</div><div class="sc-val" id="sg-sesiones">0</div></div>
+          <div class="sc gold"><div class="sc-label">Logins hoy</div><div class="sc-val" id="sg-logins">0</div></div>
+          <div class="sc red"><div class="sc-label">Intentos fallidos</div><div class="sc-val" id="sg-fallidos">0</div></div>
+          <div class="sc purple"><div class="sc-label">Usuarios con 2FA</div><div class="sc-val" id="sg-2fa">0</div></div>
+        </div>
+        <!-- Filtros -->
+        <div class="card">
+          <div class="card-title">🔍 Filtrar logs</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+            <div class="fgg"><label>Categoría</label><select id="log-cat" onchange="cargarAudit()"><option value="">Todas</option><option value="auth">Autenticación</option><option value="clientes">Clientes</option><option value="facturas">Facturas</option><option value="pagos">Pagos</option><option value="inversiones">Inversiones</option><option value="fondo">Fondo</option><option value="config">Configuración</option><option value="perfil">Perfil</option></select></div>
+            <div class="fgg"><label>Desde</label><input type="date" id="log-desde" onchange="cargarAudit()"></div>
+            <div class="fgg"><label>Hasta</label><input type="date" id="log-hasta" onchange="cargarAudit()"></div>
+          </div>
+        </div>
+        <!-- Gráfica de actividad -->
+        <div class="card">
+          <div class="card-title">📊 Actividad por día (últimos 7 días)</div>
+          <div class="chart-container"><canvas id="chart-audit"></canvas></div>
+        </div>
+        <!-- Tabla de logs -->
+        <div class="card">
+          <div class="card-title">📋 Registro de auditoría</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-audit"><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Categoría</th><th>Detalle</th></tr></thead><tbody><tr><td colspan="5"><div class="loader"><div class="spin"></div></div></td></tr></tbody></table></div>
+        </div>
+        <!-- Sesiones activas -->
+        <div class="card">
+          <div class="card-title">🖥️ Sesiones recientes</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-sesiones"><thead><tr><th>Usuario</th><th>Dispositivo</th><th>Último acceso</th><th>Estado</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px">Sin sesiones</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- PERFIL -->
+      <div class="tab-panel" id="tab-perfil">
+        <div class="sec-title">👤 Mi Perfil</div>
+        <div class="card"><div class="card-title">Datos personales</div>
+          <div class="fg-row"><div class="fgg"><label>Nombre</label><input type="text" id="p-nombre"></div><div class="fgg"><label>Teléfono</label><input type="tel" id="p-tel"></div></div>
+          <div class="fg-row"><div class="fgg"><label>RNC</label><input type="text" id="p-rnc"></div><div class="fgg"><label>Email</label><input type="email" id="p-email" disabled style="opacity:.6"></div></div>
+          <button class="btn btn-primary" onclick="actualizarPerfil()">✓ Guardar</button>
+        </div>
+        <div class="card"><div class="card-title">Cambiar contraseña</div>
+          <div class="fgg"><label>Nueva contraseña</label><input type="password" id="p-pass" placeholder="Mínimo 8 caracteres"></div>
+          <button class="btn btn-ghost" onclick="cambiarPass()">🔑 Actualizar</button>
+        </div>
+        <div class="card"><div class="card-title">🔐 Autenticación de dos factores (2FA)</div>
+          <div id="mfa-status"></div>
+          <div id="mfa-setup" style="display:none">
+            <div class="alert info">Escanea el código QR con Google Authenticator, Authy u otra app de autenticación.</div>
+            <div style="display:flex;justify-content:center;margin:16px 0"><img id="mfa-qr" style="border-radius:12px;background:#fff;padding:8px;max-width:200px"></div>
+            <div class="fgg"><label>Código de verificación</label><input type="text" id="mfa-code" placeholder="000000" maxlength="6" style="text-align:center;font-size:18px;letter-spacing:8px"></div>
+            <button class="btn btn-green" onclick="verificarMFA()">✓ Verificar y activar</button>
+          </div>
+        </div>
+        <div class="card"><div class="card-title">📋 Mi actividad reciente</div>
+          <div style="overflow-x:auto"><table class="dt" id="t-mi-actividad"><thead><tr><th>Fecha</th><th>Acción</th><th>Detalle</th></tr></thead><tbody><tr><td colspan="3" style="text-align:center;color:var(--muted);padding:18px">Cargando...</td></tr></tbody></table></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="notif" id="notif"></div>
+
+<script>
+const SURL='https://synhrkepwbmbndirwuot.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5bmhya2Vwd2JtYm5kaXJ3dW90Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMzU1ODIsImV4cCI6MjA4OTgxMTU4Mn0.gQiNQfFin_i5Jkke6v5xRBoOd7pTVy7WiDIGqj7KCiA';
+const sb=supabase.createClient(SURL,SKEY);
+var usr=null,perfil=null,tasa=62.01,fondoConfig=null;
+var chartGanancias=null,chartDistribucion=null,chartFondoBarras=null,chartFondoPastel=null;
+
+var iniciado=false;
+window.onload=async function(){
+  fetch('https://open.er-api.com/v6/latest/USD').then(r=>r.json()).then(d=>{if(d?.rates?.DOP)tasa=parseFloat(d.rates.DOP.toFixed(2));}).catch(()=>{});
+  const{data:{session}}=await sb.auth.getSession();
+  if(session){usr=session.user;await iniciar();iniciado=true;}
+  sb.auth.onAuthStateChange(async(e,s)=>{
+    if(e==='SIGNED_IN'&&s){if(iniciado)return;usr=s.user;await iniciar();iniciado=true;}
+    else if(e==='SIGNED_OUT'){usr=null;perfil=null;iniciado=false;mostrarAuth();}
+  });
+};
+
+function switchAuth(m){
+  document.getElementById('form-login').style.display=m==='login'?'block':'none';
+  document.getElementById('form-register').style.display=m==='register'?'block':'none';
+  document.getElementById('form-mfa').style.display='none';
+  document.querySelector('.auth-tabs').style.display='flex';
+  document.getElementById('tab-login').classList.toggle('active',m==='login');
+  document.getElementById('tab-register').classList.toggle('active',m==='register');
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim(),pass=document.getElementById('login-password').value;
+  if(!email||!pass){showErr('Completa email y contraseña');return;}
+  const btn=document.getElementById('btn-login');btn.disabled=true;btn.textContent='Ingresando...';
+  const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false;btn.textContent='Iniciar sesión';
+  if(error){
+    showErr(error.message==='Invalid login credentials'?'Credenciales incorrectas':error.message);
+    sb.from('audit_logs').insert({email,accion:'Login fallido',categoria:'auth',detalle:'Credenciales incorrectas',user_agent:navigator.userAgent.substring(0,200)}).then(()=>{});
+    return;
+  }
+  // ── FIX 3b: VERIFICAR SI TIENE MFA/TOTP ACTIVO ──
+  try{const{data:factors}=await sb.auth.mfa.listFactors();const totpFactors=factors?.totp?.filter(f=>f.status==='verified')||[];if(totpFactors.length>0){window._mfaPendingFactorId=totpFactors[0].id;document.getElementById('form-login').style.display='none';document.getElementById('form-register').style.display='none';document.getElementById('form-mfa').style.display='block';document.querySelector('.auth-tabs').style.display='none';document.getElementById('auth-error').classList.remove('show');document.getElementById('mfa-login-code').value='';document.getElementById('mfa-login-code').focus();return;}}catch(e){console.warn('MFA check:',e);}
+}
+
+// ── FIX 3c: FUNCIONES MFA LOGIN ──
+async function verificarMFALogin(){const code=document.getElementById('mfa-login-code').value.trim();if(code.length!==6){showErr('Ingresa el código de 6 dígitos');return;}const btn=document.getElementById('btn-mfa-verify');btn.disabled=true;btn.textContent='Verificando...';try{const{data:challenge,error:cErr}=await sb.auth.mfa.challenge({factorId:window._mfaPendingFactorId});if(cErr){btn.disabled=false;btn.textContent='🔓 Verificar';showErr('Error: '+cErr.message);return;}const{data:verify,error:vErr}=await sb.auth.mfa.verify({factorId:window._mfaPendingFactorId,challengeId:challenge.id,code});btn.disabled=false;btn.textContent='🔓 Verificar';if(vErr){showErr('Código incorrecto');document.getElementById('mfa-login-code').value='';document.getElementById('mfa-login-code').focus();return;}window._mfaPendingFactorId=null;document.querySelector('.auth-tabs').style.display='flex';document.getElementById('form-mfa').style.display='none';const{data:{session}}=await sb.auth.getSession();if(session&&!iniciado){usr=session.user;await iniciar();iniciado=true;}}catch(e){btn.disabled=false;btn.textContent='🔓 Verificar';showErr('Error: '+e.message);}}
+function cancelarMFA(){window._mfaPendingFactorId=null;document.getElementById('form-mfa').style.display='none';document.getElementById('form-login').style.display='block';document.querySelector('.auth-tabs').style.display='flex';document.getElementById('auth-error').classList.remove('show');sb.auth.signOut();}
+
+async function doRegister(){
+  const nombre=document.getElementById('reg-nombre').value.trim(),email=document.getElementById('reg-email').value.trim(),pass=document.getElementById('reg-password').value,tel=document.getElementById('reg-tel').value.trim();
+  if(!nombre||!email||!pass){showErr('Completa todos los campos');return;}
+  if(pass.length<8){showErr('Mínimo 8 caracteres');return;}
+  const btn=document.getElementById('btn-register');btn.disabled=true;btn.textContent='Creando...';
+  const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre,telefono:tel}}});
+  btn.disabled=false;btn.textContent='Crear cuenta';
+  if(error){showErr(error.message);return;}
+  if(data.user){await sb.from('perfiles').insert({id:data.user.id,nombre,email,telefono:tel,rol:'cliente'});notif('✓ Cuenta creada. Revisa tu email.','ok');switchAuth('login');}
+}
+
+async function doReset(){const email=document.getElementById('login-email').value.trim();if(!email){showErr('Ingresa tu email');return;}await sb.auth.resetPasswordForEmail(email);notif('✓ Email enviado','ok');}
+async function doLogout(){registrarLog('Logout','auth','Sesión cerrada');await sb.auth.signOut();}
+function showErr(m){const e=document.getElementById('auth-error');e.textContent=m;e.classList.add('show');}
+function mostrarAuth(){document.getElementById('auth-screen').style.display='flex';document.getElementById('app-shell').classList.remove('visible');document.getElementById('form-mfa').style.display='none';document.getElementById('form-login').style.display='block';document.querySelector('.auth-tabs').style.display='flex';}
+
+// ═══ INICIALIZACIÓN ═══
+async function iniciar(){
+  const{data:p,error:perr}=await sb.from('perfiles').select('*').eq('id',usr.id).single();
+  if(perr||!p){
+    const nombre=usr.user_metadata?.nombre||usr.email.split('@')[0];
+    await sb.from('perfiles').upsert({id:usr.id,nombre,email:usr.email,rol:'cliente'},{onConflict:'id',ignoreDuplicates:true});
+    const{data:p2}=await sb.from('perfiles').select('*').eq('id',usr.id).single();
+    perfil=p2||{id:usr.id,nombre,email:usr.email,rol:'cliente'};
+  } else { perfil=p; }
+
+  const{data:cf}=await sb.from('config_fondo').select('*').eq('activo',true).single();
+  fondoConfig=cf||{tasa_rendimiento_anual:15,tasa_inversionista_anual:7,spread_avanch:8,techo_ganancia:22470,max_exposicion_pct:30,reserva_liquidez_pct:20,penalizacion_retiro_pct:5,plazo_minimo_meses:1,salario_minimo:21000};
+
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-shell').classList.add('visible');
+  document.getElementById('tb-user').textContent=perfil.nombre||usr.email;
+  document.getElementById('tb-rol').textContent=perfil.rol;
+  actualizarReglasUI();generarNav();cargarInicio();
+  registrarLog('Login exitoso','auth','Inicio de sesión — rol: '+perfil.rol);
+  registrarSesion();
+  sb.from('perfiles').update({ultimo_login:new Date().toISOString()}).eq('id',usr.id).then(()=>{});
+  document.getElementById('p-nombre').value=perfil.nombre||'';
+  document.getElementById('p-email').value=perfil.email||usr.email;
+  document.getElementById('p-tel').value=perfil.telefono||'';
+  document.getElementById('p-rnc').value=perfil.rnc||'';
+}
+
+function actualizarReglasUI(){
+  const fc=fondoConfig;
+  const el=id=>document.getElementById(id);
+  if(el('inv-tasa'))el('inv-tasa').textContent=fc.tasa_inversionista_anual+'%';
+  if(el('inv-techo'))el('inv-techo').textContent='RD$'+fmt(fc.techo_ganancia);
+  const r={'r-rend':fc.tasa_rendimiento_anual+'%','r-tasa':fc.tasa_inversionista_anual+'%','r-spread':fc.spread_avanch+'%','r-techo':'RD$'+fmt(fc.techo_ganancia),'r-expo':fc.max_exposicion_pct+'%','r-reserva':fc.reserva_liquidez_pct+'%','r-penal':fc.penalizacion_retiro_pct+'%','r-plazo':fc.plazo_minimo_meses+' mes(es)'};
+  Object.keys(r).forEach(id=>{if(el(id))el(id).textContent=r[id];});
+  const c={'cf-rend':'tasa_rendimiento_anual','cf-tasa':'tasa_inversionista_anual','cf-techo':'techo_ganancia','cf-expo':'max_exposicion_pct','cf-reserva':'reserva_liquidez_pct','cf-penal':'penalizacion_retiro_pct','cf-plazo':'plazo_minimo_meses','cf-salmin':'salario_minimo'};
+  Object.keys(c).forEach(id=>{if(el(id))el(id).value=fc[c[id]];});
+}
+
+// ═══ NAVEGACIÓN ═══
+function generarNav(){
+  const rol=perfil?.rol;let n='<div class="nav-lbl">General</div>';
+  n+=ni('inicio','📊',rol==='admin'?'Dashboard':'Inicio');n+=ni('perfil','👤','Mi Perfil');
+  if(rol==='cliente'){n+='<div class="nav-lbl">Mi Cuenta</div>';n+=ni('facturas','🧾','Mis Facturas');n+=ni('estados','📋','Estados de Cuenta');}
+  if(rol==='inversionista'){n+='<div class="nav-lbl">Inversiones</div>';n+=ni('portafolio','📊','Mi Portafolio');n+=ni('inversion','💰','Simulador');n+=ni('contratos','📄','Mis Contratos');n+=ni('estados','📋','Estados de Cuenta');}
+  if(rol==='admin'){n+='<div class="nav-lbl">Mi Cuenta</div>';n+=ni('facturas','🧾','Mis Facturas');n+=ni('inversion','💰','Inversión');n+='<div class="nav-lbl">Administración</div>';n+=ni('clientes','👥','Clientes');n+=ni('facturacion','🧾','Facturación');n+=ni('pagos','💳','Pagos');n+=ni('leads','🎯','Leads');n+=ni('pedidos','🛒','Pedidos');n+=ni('fondo','🏦','Fondo Inversión');n+=ni('seguridad','🔒','Seguridad');}
+  document.getElementById('sidebar').innerHTML=n;
+}
+function ni(t,i,l){return`<div class="nav-item" onclick="irA(this,'${t}')"><span class="nav-icon">${i}</span>${l}</div>`;}
+
+function irA(el,tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('tab-'+tab)?.classList.add('active');el.classList.add('active');
+  const L={facturas:cargarFacturas,clientes:cargarClientes,facturacion:cargarFacturacion,pagos:cargarPagos,leads:cargarLeads,pedidos:cargarPedidos,portafolio:cargarPortafolio,fondo:cargarFondo,seguridad:cargarAudit,perfil:cargarMiActividad,contratos:cargarMisContratos,estados:cargarMisEstados};
+  if(L[tab])L[tab]();
+}
+
+// ═══ DASHBOARD FINANCIERO ═══
+var chartIngresos=null,chartModelos=null,chartFlujo=null,chartFondoRes=null;
+
+async function cargarInicio(){
+  const rol=perfil?.rol;let s='';
+  if(rol==='admin'){
+    document.getElementById('dash-admin').style.display='block';
+    document.getElementById('dash-simple').style.display='none';
+
+    // Queries en paralelo
+    const[rCli,rFacPend,rPedPend,rPagos,rFacTodas,rInv]=await Promise.all([
+      sb.from('clientes').select('*',{count:'exact',head:true}),
+      sb.from('facturas').select('*',{count:'exact',head:true}).eq('estado','pendiente'),
+      sb.from('pedidos').select('*',{count:'exact',head:true}).eq('estado','pendiente'),
+      sb.from('pagos').select('*').order('creado_en',{ascending:false}),
+      sb.from('facturas').select('*,clientes(nombre)').order('fecha_emision',{ascending:false}),
+      sb.from('inversiones').select('*').eq('estado','aprobada')
+    ]);
+
+    const pagos=rPagos.data||[];
+    const facturas=rFacTodas.data||[];
+    const invActivas=rInv.data||[];
+    const fc=fondoConfig;
+
+    // --- KPIs ---
+    const mesActual=new Date().getMonth(),anioActual=new Date().getFullYear();
+    const pagosMes=pagos.filter(p=>{const d=new Date(p.creado_en);return d.getMonth()===mesActual&&d.getFullYear()===anioActual;});
+    const ingresosMes=pagosMes.reduce((a,p)=>a+parseFloat(p.monto||0),0);
+    const avanchMes=pagosMes.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0);
+    const totalPagado=pagos.reduce((a,p)=>a+parseFloat(p.monto||0),0);
+    const cuentasPorCobrar=facturas.filter(f=>f.estado==='pendiente').reduce((a,f)=>a+parseFloat(f.monto_rd||0),0);
+    const facPagadas=facturas.filter(f=>f.estado==='pagada').length;
+    const tasaCobro=facturas.length?Math.round(facPagadas/facturas.length*100):0;
+    const capitalFondo=invActivas.reduce((a,i)=>a+parseFloat(i.monto||0),0);
+    const gananciaAvFondo=invActivas.reduce((a,i)=>a+parseFloat(i.monto||0)*(fc.spread_avanch/100/12)*parseInt(i.plazo_meses||6),0);
+
+    s=`<div class="sc green"><div class="sc-label">💰 Ingresos servicios (mes)</div><div class="sc-val">RD$${fmt(ingresosMes)}</div><div class="sc-sub">Avanch: RD$${fmt(avanchMes)}</div></div>`;
+    s+=`<div class="sc blue"><div class="sc-label">📊 Total recaudado (servicios)</div><div class="sc-val">RD$${fmt(totalPagado)}</div></div>`;
+    s+=`<div class="sc gold"><div class="sc-label">🧾 Cuentas x cobrar</div><div class="sc-val">RD$${fmt(cuentasPorCobrar)}</div><div class="sc-sub">${rFacPend.count||0} facturas</div></div>`;
+    s+=`<div class="sc purple"><div class="sc-label">📈 Tasa de cobro</div><div class="sc-val">${tasaCobro}%</div><div class="sc-sub">${facPagadas}/${facturas.length} facturas</div></div>`;
+    s+=`<div class="sc blue"><div class="sc-label">👥 Clientes</div><div class="sc-val">${rCli.count||0}</div></div>`;
+    s+=`<div class="sc green"><div class="sc-label">🏦 Capital fondo (inv.)</div><div class="sc-val">RD$${fmt(capitalFondo)}</div><div class="sc-sub">Spread Avanch: RD$${fmt(gananciaAvFondo)}</div></div>`;
+
+    document.getElementById('stats-inicio').innerHTML=s;
+
+    // --- Gráfica: Ingresos mensuales (línea) ---
+    renderChartIngresos(pagos);
+    // --- Gráfica: Por modelo (pie) ---
+    renderChartModelos(pagos);
+    // --- Gráfica: Flujo Avanch / Komultisoft / VicOrtiz ---
+    renderChartFlujo(pagos);
+    // --- Gráfica: Fondo resumen (doughnut) ---
+    renderChartFondoResumen(capitalFondo,cuentasPorCobrar,gananciaAvFondo);
+    // --- Top clientes ---
+    cargarTopClientes(facturas);
+    // --- Próximos vencimientos ---
+    cargarVencimientos(facturas);
+    // --- Actividad reciente ---
+    cargarActividadReciente();
+
+  } else if(rol==='inversionista'){
+    document.getElementById('dash-admin').style.display='none';
+    document.getElementById('dash-simple').style.display='block';
+    const{data:inv}=await sb.from('inversiones').select('*').eq('perfil_id',usr.id).eq('estado','aprobada');
+    const ti=inv?.reduce((a,i)=>a+parseFloat(i.monto||0),0)||0;
+    const ga=inv?.reduce((a,i)=>a+parseFloat(i.ganancia_acumulada||0),0)||0;
+    s=`<div class="sc green"><div class="sc-label">💰 Invertido</div><div class="sc-val">RD$${fmt(ti)}</div></div><div class="sc gold"><div class="sc-label">📈 Ganancia</div><div class="sc-val">RD$${fmt(ga)}</div></div><div class="sc blue"><div class="sc-label">📊 Activas</div><div class="sc-val">${inv?.length||0}</div></div>`;
+    document.getElementById('stats-inicio').innerHTML=s;
+  } else {
+    document.getElementById('dash-admin').style.display='none';
+    document.getElementById('dash-simple').style.display='block';
+    s=`<div class="sc blue"><div class="sc-label">Plan activo</div><div class="sc-val" style="font-size:13px">${perfil?.plan||'Sin plan'}</div></div><div class="sc green"><div class="sc-label">Estado</div><div class="sc-val" style="font-size:13px">${perfil?.estado||'activo'}</div></div>`;
+    document.getElementById('stats-inicio').innerHTML=s;
+  }
+}
+
+function renderChartIngresos(pagos){
+  const ctx=document.getElementById('chart-ingresos');if(!ctx)return;
+  if(chartIngresos)chartIngresos.destroy();
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ma=new Date().getMonth(),aa=new Date().getFullYear();
+  const labels=[],dIngresos=[],dAvanch=[];
+  for(let i=5;i>=0;i--){
+    const mesIdx=(ma-i+12)%12;
+    const anio=ma-i<0?aa-1:aa;
+    labels.push(meses[mesIdx]);
+    const pm=pagos.filter(p=>{const d=new Date(p.creado_en);return d.getMonth()===mesIdx&&d.getFullYear()===anio;});
+    dIngresos.push(parseFloat(pm.reduce((a,p)=>a+parseFloat(p.monto||0),0).toFixed(2)));
+    dAvanch.push(parseFloat(pm.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0).toFixed(2)));
+  }
+  chartIngresos=new Chart(ctx,{type:'line',data:{labels,datasets:[
+    {label:'Ingresos totales',data:dIngresos,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.1)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#10b981'},
+    {label:'Parte Avanch',data:dAvanch,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.08)',fill:true,tension:.4,pointRadius:4,pointBackgroundColor:'#3b82f6'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a8bc',font:{size:10}}}},scales:{x:{ticks:{color:'#7b849a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#7b849a',callback:v=>'RD$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+function renderChartModelos(pagos){
+  const ctx=document.getElementById('chart-modelos');if(!ctx)return;
+  if(chartModelos)chartModelos.destroy();
+  const m1=pagos.filter(p=>parseInt(p.modelo)===1).reduce((a,p)=>a+parseFloat(p.monto||0),0);
+  const m2=pagos.filter(p=>parseInt(p.modelo)===2).reduce((a,p)=>a+parseFloat(p.monto||0),0);
+  const m3=pagos.filter(p=>parseInt(p.modelo)===3).reduce((a,p)=>a+parseFloat(p.monto||0),0);
+  const labels=['M1 — Facturación (75/25)','M2 — e-CF (65/26/9)','M3 — Tienda (100%)'];
+  const data=[m1,m2,m3];
+  if(!m1&&!m2&&!m3){data[0]=1;} // placeholder
+  chartModelos=new Chart(ctx,{type:'pie',data:{labels,datasets:[{data,backgroundColor:['rgba(59,130,246,0.7)','rgba(16,185,129,0.7)','rgba(251,191,36,0.7)'],borderColor:'#191e2a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a8bc',font:{size:10},padding:12}}}}});
+}
+
+function renderChartFlujo(pagos){
+  const ctx=document.getElementById('chart-flujo');if(!ctx)return;
+  if(chartFlujo)chartFlujo.destroy();
+  const meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ma=new Date().getMonth(),aa=new Date().getFullYear();
+  const labels=[],dAv=[],dKo=[],dVic=[];
+  for(let i=5;i>=0;i--){
+    const mesIdx=(ma-i+12)%12;
+    const anio=ma-i<0?aa-1:aa;
+    labels.push(meses[mesIdx]);
+    const pm=pagos.filter(p=>{const d=new Date(p.creado_en);return d.getMonth()===mesIdx&&d.getFullYear()===anio;});
+    dAv.push(parseFloat(pm.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0).toFixed(2)));
+    dKo.push(parseFloat(pm.reduce((a,p)=>a+parseFloat(p.socio_parte||0),0).toFixed(2)));
+    dVic.push(parseFloat(pm.reduce((a,p)=>a+parseFloat(p.vicortiz_parte||0),0).toFixed(2)));
+  }
+  chartFlujo=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Avanch (26-75%)',data:dAv,backgroundColor:'rgba(59,130,246,0.7)',borderRadius:4},
+    {label:'Komultisoft (9-25%)',data:dKo,backgroundColor:'rgba(167,139,250,0.6)',borderRadius:4},
+    {label:'VicOrtiz Group (65%)',data:dVic,backgroundColor:'rgba(251,191,36,0.6)',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a8bc',font:{size:10}}}},scales:{x:{ticks:{color:'#7b849a'},grid:{color:'rgba(255,255,255,0.05)'},stacked:true},y:{ticks:{color:'#7b849a',callback:v=>'RD$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'},stacked:true}}}});
+}
+
+function renderChartFondoResumen(capital,cxc,ganAv){
+  const ctx=document.getElementById('chart-fondo-resumen');if(!ctx)return;
+  if(chartFondoRes)chartFondoRes.destroy();
+  const labels=['Capital invertido','Cuentas x cobrar','Ganancia Avanch (fondo)'];
+  const data=[capital||0,cxc||0,ganAv||0];
+  if(!capital&&!cxc&&!ganAv){data[0]=1;}
+  chartFondoRes=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['rgba(16,185,129,0.7)','rgba(251,191,36,0.7)','rgba(124,58,237,0.7)'],borderColor:'#191e2a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a8bc',font:{size:10},padding:12}}}}});
+}
+
+function cargarTopClientes(facturas){
+  const clientes={};
+  facturas.forEach(f=>{
+    const nom=f.clientes?.nombre||'Sin nombre';
+    if(!clientes[nom])clientes[nom]={facturado:0,pagado:0,pendiente:0};
+    const m=parseFloat(f.monto_rd||0);
+    clientes[nom].facturado+=m;
+    if(f.estado==='pagada')clientes[nom].pagado+=m;
+    else clientes[nom].pendiente+=m;
+  });
+  const sorted=Object.entries(clientes).sort((a,b)=>b[1].facturado-a[1].facturado).slice(0,5);
+  if(!sorted.length){tbEmpty('t-top-clientes',4);return;}
+  document.getElementById('t-top-clientes').querySelector('tbody').innerHTML=sorted.map(([nom,d])=>`<tr><td>${nom}</td><td style="color:var(--blue3)">RD$${fmt(d.facturado)}</td><td style="color:var(--green3)">RD$${fmt(d.pagado)}</td><td style="color:${d.pendiente>0?'var(--gold3)':'var(--muted)'}">RD$${fmt(d.pendiente)}</td></tr>`).join('');
+}
+
+function cargarVencimientos(facturas){
+  const hoy=new Date();
+  const proximas=facturas.filter(f=>f.estado==='pendiente'&&f.fecha_vencimiento).sort((a,b)=>new Date(a.fecha_vencimiento)-new Date(b.fecha_vencimiento)).slice(0,5);
+  if(!proximas.length){tbEmpty('t-vencimientos',4);return;}
+  document.getElementById('t-vencimientos').querySelector('tbody').innerHTML=proximas.map(f=>{
+    const vence=new Date(f.fecha_vencimiento);
+    const diasRestantes=Math.ceil((vence-hoy)/(1000*60*60*24));
+    const color=diasRestantes<0?'var(--red2)':diasRestantes<=7?'var(--gold3)':'var(--muted2)';
+    const label=diasRestantes<0?'Vencida':diasRestantes===0?'Hoy':diasRestantes+' días';
+    return`<tr><td>${f.clientes?.nombre||'—'}</td><td>${f.concepto||'—'}</td><td style="color:var(--green3)">RD$${fmt(f.monto_rd)}</td><td style="color:${color};font-weight:600">${label}</td></tr>`;
+  }).join('');
+}
+
+async function cargarActividadReciente(){
+  const el=document.getElementById('actividad-reciente');if(!el)return;
+  const{data}=await sb.from('audit_logs').select('*').order('creado_en',{ascending:false}).limit(8);
+  if(!data?.length){el.innerHTML='<div style="text-align:center;padding:18px;color:var(--muted)">Sin actividad reciente</div>';return;}
+  el.innerHTML=data.map(l=>{
+    const tiempo=tiempoRelativo(new Date(l.creado_en));
+    return`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)"><span>${l.accion} <span style="color:var(--muted)">— ${l.email||''}</span></span><span style="color:var(--muted);font-size:10px;white-space:nowrap">${tiempo}</span></div>`;
+  }).join('');
+}
+
+function tiempoRelativo(fecha){
+  const ahora=new Date();
+  const diff=Math.floor((ahora-fecha)/1000);
+  if(diff<60)return'Hace '+diff+'s';
+  if(diff<3600)return'Hace '+Math.floor(diff/60)+'m';
+  if(diff<86400)return'Hace '+Math.floor(diff/3600)+'h';
+  return'Hace '+Math.floor(diff/86400)+'d';
+}
+
+// ═══ FACTURAS (cliente/admin) ═══
+async function cargarFacturas(){
+  let data;
+  if(perfil?.rol==='admin'){
+    // Admin ve TODAS las facturas
+    const res=await sb.from('facturas').select('*,clientes(nombre)').order('fecha_emision',{ascending:false});
+    data=res.data;
+  } else {
+    // Cliente ve solo sus facturas (requiere perfil_id en clientes)
+    const res=await sb.from('facturas').select('*,clientes!inner(nombre,perfil_id)').eq('clientes.perfil_id',usr.id).order('fecha_emision',{ascending:false});
+    data=res.data;
+  }
+  if(!data?.length){tbEmpty('t-facturas',5);['f-pend','f-pag','f-total','f-ultimo','f-corte'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent='—';});return;}
+  const pend=data.filter(f=>f.estado==='pendiente'),pag=data.filter(f=>f.estado==='pagada');
+  document.getElementById('f-pend').textContent=pend.length;
+  document.getElementById('f-pag').textContent=pag.length;
+  document.getElementById('f-total').textContent='RD$'+fmt(pend.reduce((s,f)=>s+parseFloat(f.monto_rd||f.monto||0),0));
+  const up=pag.sort((a,b)=>new Date(b.fecha_pago)-new Date(a.fecha_pago))[0];
+  document.getElementById('f-ultimo').textContent=up?new Date(up.fecha_pago).toLocaleDateString('es-DO'):'—';
+  const prox=pend.sort((a,b)=>new Date(a.fecha_vencimiento)-new Date(b.fecha_vencimiento))[0];
+  document.getElementById('f-corte').textContent=prox?.fecha_vencimiento?new Date(prox.fecha_vencimiento).toLocaleDateString('es-DO'):'—';
+  document.getElementById('t-facturas').querySelector('tbody').innerHTML=data.map(f=>`<tr><td>${f.numero||'—'}</td><td>${f.concepto||'—'}</td><td style="color:var(--green3)">RD$${fmt(f.monto_rd||f.monto)}</td><td>${bdg(f.estado)}</td><td>${f.fecha_vencimiento?new Date(f.fecha_vencimiento).toLocaleDateString('es-DO'):'—'}</td></tr>`).join('');
+}
+
+// ═══ PORTAFOLIO (inversionista) ═══
+async function cargarPortafolio(){
+  const fc=fondoConfig;
+  const{data:inv}=await sb.from('inversiones').select('*').eq('perfil_id',usr.id).order('fecha_solicitud',{ascending:false});
+  const activas=inv?.filter(i=>i.estado==='aprobada')||[];
+  const ti=activas.reduce((a,i)=>a+parseFloat(i.monto||0),0);
+  const ga=activas.reduce((a,i)=>a+parseFloat(i.ganancia_acumulada||0),0);
+  let tc=0;activas.forEach(i=>{const g=parseFloat(i.monto||0)*(fc.tasa_inversionista_anual/100/12)*parseInt(i.plazo_meses||6);tc+=parseFloat(i.monto||0)+Math.min(g,fc.techo_ganancia);});
+  document.getElementById('pt-invertido').textContent='RD$'+fmt(ti);
+  document.getElementById('pt-ganancia').textContent='RD$'+fmt(ga);
+  document.getElementById('pt-cobro').textContent='RD$'+fmt(tc);
+  document.getElementById('pt-activas').textContent=activas.length;
+  document.getElementById('pt-tasa').textContent=fc.tasa_inversionista_anual+'%';
+  if(!inv?.length){tbEmpty('t-mis-inversiones',6);}
+  else{document.getElementById('t-mis-inversiones').querySelector('tbody').innerHTML=inv.map(i=>{const g=parseFloat(i.monto||0)*(fc.tasa_inversionista_anual/100/12)*parseInt(i.plazo_meses||6);return`<tr><td>${i.fecha_solicitud?new Date(i.fecha_solicitud).toLocaleDateString('es-DO'):'—'}</td><td style="color:var(--green3)">RD$${fmt(i.monto)}</td><td>${i.plazo_meses||'—'}m</td><td style="color:var(--gold3)">RD$${fmt(Math.min(g,fc.techo_ganancia))}</td><td>${i.fecha_vencimiento?new Date(i.fecha_vencimiento).toLocaleDateString('es-DO'):'—'}</td><td>${bdg(i.estado)}</td></tr>`;}).join('');}
+  const{data:mov}=await sb.from('movimientos_fondo').select('*').eq('perfil_id',usr.id).order('creado_en',{ascending:false});
+  if(!mov?.length){tbEmpty('t-mis-movimientos',4);}
+  else{document.getElementById('t-mis-movimientos').querySelector('tbody').innerHTML=mov.map(m=>`<tr><td>${new Date(m.creado_en).toLocaleDateString('es-DO')}</td><td>${bdg(m.tipo)}</td><td style="color:${m.tipo==='retiro'?'var(--red2)':'var(--green3)'}">RD$${fmt(m.monto)}</td><td>${m.descripcion||'—'}</td></tr>`).join('');}
+  renderChartGanancias(activas);renderChartDistribucion(inv||[]);
+}
+
+function renderChartGanancias(activas){
+  const ctx=document.getElementById('chart-ganancias');if(!ctx)return;
+  if(chartGanancias)chartGanancias.destroy();
+  const fc=fondoConfig,meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],ma=new Date().getMonth(),labels=[],datos=[];
+  for(let i=5;i>=0;i--){labels.push(meses[(ma-i+12)%12]);datos.push(parseFloat((activas.reduce((a,inv)=>a+parseFloat(inv.monto||0)*(fc.tasa_inversionista_anual/100/12),0)).toFixed(2)));}
+  chartGanancias=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Ganancia mensual (RD$)',data:datos,backgroundColor:'rgba(16,185,129,0.6)',borderColor:'rgba(16,185,129,1)',borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a8bc',font:{size:11}}}},scales:{x:{ticks:{color:'#7b849a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#7b849a',callback:v=>'RD$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+function renderChartDistribucion(inversiones){
+  const ctx=document.getElementById('chart-distribucion');if(!ctx)return;
+  if(chartDistribucion)chartDistribucion.destroy();
+  const props={};inversiones.forEach(i=>{const p=i.proposito||'Otros';props[p]=(props[p]||0)+parseFloat(i.monto||0);});
+  const labels=Object.keys(props),data=Object.values(props),colors=['#3b82f6','#10b981','#f59e0b','#a78bfa','#ef4444','#06b6d4'];
+  if(!labels.length){labels.push('Sin inversiones');data.push(1);colors[0]='#1f2635';}
+  chartDistribucion=new Chart(ctx,{type:'pie',data:{labels,datasets:[{data,backgroundColor:colors.slice(0,labels.length),borderColor:'#191e2a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a8bc',font:{size:10},padding:12}}}}});
+}
+
+// ═══ SIMULADOR ═══
+function simular(){
+  const fc=fondoConfig,m=parseFloat(document.getElementById('sim-monto').value)||0,p=parseInt(document.getElementById('sim-plazo').value)||6;
+  if(!m){document.getElementById('sim-res').style.display='none';return;}
+  const gi=m*(fc.tasa_inversionista_anual/100/12)*p,ga=m*(fc.spread_avanch/100/12)*p,gc=Math.min(gi,fc.techo_ganancia);
+  document.getElementById('sim-res').style.display='block';
+  document.getElementById('sr-cap').textContent='RD$'+fmt(m);
+  document.getElementById('sr-gan').textContent='RD$'+fmt(gi);
+  document.getElementById('sr-gan-av').textContent='RD$'+fmt(ga);
+  document.getElementById('sr-techo').textContent='RD$'+fmt(fc.techo_ganancia);
+  document.getElementById('sr-total').textContent='RD$'+fmt(m+gc);
+}
+
+async function enviarSolicitud(){
+  const m=parseFloat(document.getElementById('sol-monto').value)||0,d=document.getElementById('sol-desc').value.trim(),plazo=parseInt(document.getElementById('sol-plazo').value)||6;
+  if(!m||!d){notif('⚠️ Completa monto y descripción','err');return;}
+  const{error}=await sb.from('inversiones').insert({perfil_id:usr.id,monto:m,plazo_meses:plazo,tasa_aplicada:fondoConfig.tasa_inversionista_anual,proposito:document.getElementById('sol-prop').value,descripcion:d,estado:'pendiente'});
+  if(error){notif('Error: '+error.message,'err');return;}
+  notif('✓ Solicitud enviada','ok');document.getElementById('sol-monto').value='';document.getElementById('sol-desc').value='';
+  registrarLog('Solicitud de inversión','inversiones','Monto: RD$'+fmt(m)+' — Plazo: '+plazo+'m','inversiones');
+}
+
+// ═══ ADMIN: FONDO ═══
+async function cargarFondo(){
+  const{data:inv}=await sb.from('inversiones').select('*,perfiles(nombre)').order('fecha_solicitud',{ascending:false});
+  if(!inv){tbEmpty('t-todas-inversiones',7);return;}
+  const fc=fondoConfig,activas=inv.filter(i=>i.estado==='aprobada'),pend=inv.filter(i=>i.estado==='pendiente');
+  const cap=activas.reduce((a,i)=>a+parseFloat(i.monto||0),0);
+  const gaAv=activas.reduce((a,i)=>a+parseFloat(i.monto||0)*(fc.spread_avanch/100/12)*parseInt(i.plazo_meses||6),0);
+  const pagInv=activas.reduce((a,i)=>a+parseFloat(i.ganancia_acumulada||0),0);
+  document.getElementById('fd-capital').textContent='RD$'+fmt(cap);
+  document.getElementById('fd-ganancia-av').textContent='RD$'+fmt(gaAv);
+  document.getElementById('fd-pagado').textContent='RD$'+fmt(pagInv);
+  document.getElementById('fd-activas').textContent=activas.length;
+  document.getElementById('fd-pend').textContent=pend.length;
+  document.getElementById('t-todas-inversiones').querySelector('tbody').innerHTML=inv.map(i=>{
+    const gi=parseFloat(i.monto||0)*(fc.tasa_inversionista_anual/100/12)*parseInt(i.plazo_meses||6);
+    const ga=parseFloat(i.monto||0)*(fc.spread_avanch/100/12)*parseInt(i.plazo_meses||6);
+    let acc=i.estado==='pendiente'?`<button class="btn btn-green" style="padding:3px 8px;font-size:10px" onclick="aprobarInversion('${i.id}')">✓</button> <button class="btn btn-red" style="padding:3px 8px;font-size:10px" onclick="rechazarInversion('${i.id}')">✕</button>`:'—';
+    return`<tr><td>${i.perfiles?.nombre||'—'}</td><td style="color:var(--green3)">RD$${fmt(i.monto)}</td><td>${i.plazo_meses||'—'}m</td><td style="color:var(--gold3)">RD$${fmt(Math.min(gi,fc.techo_ganancia))}</td><td style="color:var(--purple3)">RD$${fmt(ga)}</td><td>${bdg(i.estado)}</td><td>${acc}</td></tr>`;
+  }).join('');
+  renderChartFondoBarras(activas);renderChartFondoPastel(activas,cap);
+}
+
+async function aprobarInversion(id){
+  const{data:inv}=await sb.from('inversiones').select('*,perfiles(nombre,email,rnc)').eq('id',id).single();if(!inv)return;
+  const fi=new Date(),fv=new Date();fv.setMonth(fv.getMonth()+parseInt(inv.plazo_meses||6));
+  const{error}=await sb.from('inversiones').update({estado:'aprobada',fecha_inicio:fi.toISOString(),fecha_vencimiento:fv.toISOString(),tasa_aplicada:fondoConfig.tasa_inversionista_anual}).eq('id',id);
+  if(error){notif('Error: '+error.message,'err');return;}
+  await sb.from('movimientos_fondo').insert({inversion_id:id,perfil_id:inv.perfil_id,tipo:'deposito',monto:inv.monto,descripcion:'Inversión aprobada — '+inv.proposito});
+  // Generar contrato automáticamente
+  await generarContrato(inv,fi,fv);
+  notif('✓ Aprobada + contrato generado','ok');cargarFondo();
+  registrarLog('Inversión aprobada','inversiones','Monto: RD$'+fmt(inv.monto)+' — '+inv.proposito,'inversiones',id);
+}
+async function rechazarInversion(id){await sb.from('inversiones').update({estado:'rechazada'}).eq('id',id);notif('Rechazada','ok');cargarFondo();registrarLog('Inversión rechazada','inversiones','Solicitud rechazada','inversiones',id);}
+
+function renderChartFondoBarras(activas){
+  const ctx=document.getElementById('chart-fondo-barras');if(!ctx)return;
+  if(chartFondoBarras)chartFondoBarras.destroy();
+  const fc=fondoConfig,meses=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],ma=new Date().getMonth(),labels=[],dI=[],dA=[];
+  for(let i=5;i>=0;i--){labels.push(meses[(ma-i+12)%12]);const gI=activas.reduce((a,inv)=>a+parseFloat(inv.monto||0)*(fc.tasa_inversionista_anual/100/12),0);const gA=activas.reduce((a,inv)=>a+parseFloat(inv.monto||0)*(fc.spread_avanch/100/12),0);dI.push(+gI.toFixed(2));dA.push(+gA.toFixed(2));}
+  chartFondoBarras=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'Inversionistas',data:dI,backgroundColor:'rgba(16,185,129,0.6)',borderRadius:4},{label:'Avanch',data:dA,backgroundColor:'rgba(124,58,237,0.6)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a8bc',font:{size:10}}}},scales:{x:{ticks:{color:'#7b849a'},grid:{color:'rgba(255,255,255,0.05)'},stacked:true},y:{ticks:{color:'#7b849a',callback:v=>'RD$'+v.toLocaleString()},grid:{color:'rgba(255,255,255,0.05)'},stacked:true}}}});
+}
+
+function renderChartFondoPastel(activas,cap){
+  const ctx=document.getElementById('chart-fondo-pastel');if(!ctx)return;
+  if(chartFondoPastel)chartFondoPastel.destroy();
+  const fc=fondoConfig,res=cap*(fc.reserva_liquidez_pct/100),op=cap-res;
+  chartFondoPastel=new Chart(ctx,{type:'doughnut',data:{labels:['Capital operativo','Reserva liquidez'],datasets:[{data:[op||1,res||0],backgroundColor:['rgba(59,130,246,0.7)','rgba(251,191,36,0.7)'],borderColor:'#191e2a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#a0a8bc',font:{size:10},padding:12}}}}});
+}
+
+async function guardarConfigFondo(){
+  const rend=parseFloat(document.getElementById('cf-rend').value)||15,tasa=parseFloat(document.getElementById('cf-tasa').value)||7;
+  const datos={tasa_rendimiento_anual:rend,tasa_inversionista_anual:tasa,spread_avanch:rend-tasa,techo_ganancia:parseFloat(document.getElementById('cf-techo').value)||22470,max_exposicion_pct:parseFloat(document.getElementById('cf-expo').value)||30,reserva_liquidez_pct:parseFloat(document.getElementById('cf-reserva').value)||20,penalizacion_retiro_pct:parseFloat(document.getElementById('cf-penal').value)||5,plazo_minimo_meses:parseInt(document.getElementById('cf-plazo').value)||1,salario_minimo:parseFloat(document.getElementById('cf-salmin').value)||21000,actualizado_en:new Date().toISOString()};
+  const{error}=await sb.from('config_fondo').update(datos).eq('id',fondoConfig.id);
+  if(error){notif('Error: '+error.message,'err');return;}
+  fondoConfig={...fondoConfig,...datos};actualizarReglasUI();notif('✓ Reglas actualizadas','ok');
+  registrarLog('Reglas del fondo actualizadas','config','Rend: '+rend+'% | Tasa inv: '+tasa+'% | Spread: '+(rend-tasa)+'%','config_fondo');
+}
+
+// ═══ ADMIN: CLIENTES ═══
+async function cargarClientes(){
+  const{data,error}=await sb.from('clientes').select('*').order('creado_en',{ascending:false});
+  if(error){notif('Error','err');return;}if(!data?.length){tbEmpty('t-clientes',6);return;}
+  document.getElementById('t-clientes').querySelector('tbody').innerHTML=data.map(c=>`<tr><td>${c.nombre}</td><td>${c.plan||'—'}</td><td>${c.telefono||'—'}</td><td>${c.dia_ciclo||'—'}</td><td>${bdg(c.estado||'activo')}</td><td><button class="btn btn-gold" style="padding:3px 9px;font-size:10px" onclick="abrirEditar(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button></td></tr>`).join('');
+}
+function limpiarFormCliente(){['nc-nombre','nc-rnc','nc-email','nc-tel','nc-dir'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});notif('↺ Limpiado','ok');}
+async function crearCliente(){
+  const nombre=document.getElementById('nc-nombre').value.trim();if(!nombre){notif('⚠️ Nombre requerido','err');return;}
+  const datos={nombre,rnc:document.getElementById('nc-rnc').value.trim()||null,email:document.getElementById('nc-email').value.trim()||null,telefono:document.getElementById('nc-tel').value.trim()||null,direccion:document.getElementById('nc-dir').value.trim()||null,plan:document.getElementById('nc-plan').value,dia_ciclo:parseInt(document.getElementById('nc-ciclo').value),estado:'activo'};
+  const{error}=await sb.from('clientes').insert(datos);if(error){notif('Error: '+error.message,'err');return;}
+  notif('✓ Cliente creado','ok');limpiarFormCliente();tog('form-nc');cargarClientes();
+  registrarLog('Cliente creado','clientes','Nuevo cliente: '+nombre,'clientes');
+}
+function abrirEditar(c){
+  document.getElementById('ec-id').value=c.id;document.getElementById('ec-nombre').value=c.nombre||'';document.getElementById('ec-rnc').value=c.rnc||'';document.getElementById('ec-email').value=c.email||'';document.getElementById('ec-tel').value=c.telefono||'';document.getElementById('ec-dir').value=c.direccion||'';
+  const ps=document.getElementById('ec-plan');for(let i=0;i<ps.options.length;i++){if(ps.options[i].value===c.plan||ps.options[i].text===c.plan){ps.selectedIndex=i;break;}}
+  const cs=document.getElementById('ec-ciclo');for(let i=0;i<cs.options.length;i++){if(parseInt(cs.options[i].value)===c.dia_ciclo){cs.selectedIndex=i;break;}}
+  const es=document.getElementById('ec-estado');for(let i=0;i<es.options.length;i++){if(es.options[i].value===c.estado){es.selectedIndex=i;break;}}
+  document.getElementById('modal-edit-cliente').classList.add('open');
+}
+function cerrarModal(){document.getElementById('modal-edit-cliente').classList.remove('open');}
+async function guardarEdicionCliente(){
+  const id=document.getElementById('ec-id').value;if(!id){notif('Error','err');return;}
+  const datos={nombre:document.getElementById('ec-nombre').value.trim(),rnc:document.getElementById('ec-rnc').value.trim()||null,email:document.getElementById('ec-email').value.trim()||null,telefono:document.getElementById('ec-tel').value.trim()||null,direccion:document.getElementById('ec-dir').value.trim()||null,plan:document.getElementById('ec-plan').value,dia_ciclo:parseInt(document.getElementById('ec-ciclo').value),estado:document.getElementById('ec-estado').value};
+  const{error}=await sb.from('clientes').update(datos).eq('id',id);if(error){notif('Error: '+error.message,'err');return;}
+  notif('✓ Actualizado','ok');cerrarModal();cargarClientes();
+  registrarLog('Cliente editado','clientes','Cliente actualizado: '+datos.nombre,'clientes',id);
+}
+
+// ═══ ADMIN: FACTURACIÓN ═══
+async function cargarFacturacion(){
+  const{data:cl}=await sb.from('clientes').select('id,nombre');
+  if(cl?.length)document.getElementById('nf-cliente').innerHTML='<option value="">— Seleccionar —</option>'+cl.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  const{data}=await sb.from('facturas').select('*,clientes(nombre)').order('fecha_emision',{ascending:false});
+  if(!data?.length){tbEmpty('t-facturacion',6);return;}
+  document.getElementById('t-facturacion').querySelector('tbody').innerHTML=data.map(f=>`<tr><td>${f.clientes?.nombre||'—'}</td><td>${f.concepto||'—'}</td><td style="color:var(--green3)">RD$${fmt(f.monto_rd)}</td><td>${bdg(f.estado)}</td><td>${f.fecha_vencimiento?new Date(f.fecha_vencimiento).toLocaleDateString('es-DO'):'—'}</td><td><button class="btn btn-green" style="padding:3px 9px;font-size:10px" onclick="marcarPagada('${f.id}')">✓</button></td></tr>`).join('');
+}
+async function crearFactura(){
+  const cid=document.getElementById('nf-cliente').value,con=document.getElementById('nf-concepto').value.trim(),m=parseFloat(document.getElementById('nf-monto').value)||0;
+  if(!cid||!con||!m){notif('⚠️ Completa campos','err');return;}
+const{error}=await sb.from('facturas').insert({cliente_id:cid,numero:'FAC-'+Date.now().toString().slice(-6),concepto:con,monto:m,monto_rd:m,estado:'pendiente',fecha_emision:new Date().toISOString().split('T')[0],fecha_vencimiento:document.getElementById('nf-vence').value||null});  if(error){notif('Error: '+error.message,'err');return;}notif('✓ Factura creada','ok');document.getElementById('nf-concepto').value='';document.getElementById('nf-monto').value='';tog('form-nf');cargarFacturacion();
+  registrarLog('Factura creada','facturas','Concepto: '+con+' — RD$'+fmt(m),'facturas');
+}
+async function marcarPagada(id){const{error}=await sb.from('facturas').update({estado:'pagada',fecha_pago:new Date().toISOString()}).eq('id',id);if(error){notif('Error','err');return;}notif('✓ Pagada','ok');cargarFacturacion();registrarLog('Factura pagada','facturas','Factura marcada como pagada','facturas',id);}
+
+// ═══ ADMIN: PAGOS ═══
+async function cargarPagos(){
+  const{data:fl}=await sb.from('facturas').select('id,numero');
+  if(fl?.length)document.getElementById('pago-fac').innerHTML='<option value="">— Opcional —</option>'+fl.map(f=>`<option value="${f.id}">${f.numero}</option>`).join('');
+  const{data}=await sb.from('pagos').select('*').order('creado_en',{ascending:false});
+  if(!data?.length){tbEmpty('t-pagos',7);} else {
+    document.getElementById('t-pagos').querySelector('tbody').innerHTML=data.map(p=>`<tr><td>${new Date(p.creado_en).toLocaleDateString('es-DO')}</td><td style="color:var(--green3)">RD$${fmt(p.monto)}</td><td>${p.metodo||'—'}</td><td>M${p.modelo}</td><td style="color:var(--blue3)">RD$${fmt(p.avanch_parte)}</td><td style="color:var(--purple3)">RD$${fmt(p.socio_parte)}</td><td style="color:var(--gold3)">RD$${fmt(p.vicortiz_parte)}</td></tr>`).join('');
+  }
+  cargarReportesCorte();
+}
+async function registrarPago(){
+  const m=parseFloat(document.getElementById('pago-monto').value)||0,mod=parseInt(document.getElementById('pago-mod').value);
+  if(!m){notif('⚠️ Ingresa monto','err');return;}
+  let av=0,ko=0,vic=0;
+  if(mod===1){av=m*0.75;ko=m*0.25;vic=0;}
+  else if(mod===2){vic=m*0.65;av=m*0.26;ko=m*0.09;}
+  else{av=m;ko=0;vic=0;}
+  const{error}=await sb.from('pagos').insert({factura_id:document.getElementById('pago-fac').value||null,monto_total:m,monto:m,metodo:document.getElementById('pago-met').value,referencia:document.getElementById('pago-ref').value,modelo:mod,avanch_parte:av,socio_parte:ko,vicortiz_parte:vic});
+  if(error){notif('Error','err');return;}notif('✓ Registrado','ok');document.getElementById('pago-monto').value='';document.getElementById('pago-ref').value='';cargarPagos();
+  registrarLog('Pago registrado','pagos','Monto: RD$'+fmt(m)+' — Modelo: M'+mod,'pagos');
+}
+
+// ═══ ADMIN: LEADS & PEDIDOS ═══
+async function cargarLeads(){const{data}=await sb.from('leads').select('*').order('creado_en',{ascending:false});if(!data?.length){tbEmpty('t-leads',6);return;}document.getElementById('t-leads').querySelector('tbody').innerHTML=data.map(l=>`<tr><td>${l.nombre||'—'}</td><td>${l.email||'—'}</td><td>${l.plan_interes||'—'}</td><td>${bdg(l.estado)}</td><td>${new Date(l.creado_en).toLocaleDateString('es-DO')}</td><td><button class="btn btn-green" style="padding:3px 9px;font-size:10px" onclick="cvLead('${l.id}')">✓</button></td></tr>`).join('');}
+async function cvLead(id){await sb.from('leads').update({estado:'convertido'}).eq('id',id);notif('✓','ok');cargarLeads();}
+async function cargarPedidos(){
+  const{data}=await sb.from('pedidos').select('*').order('creado_en',{ascending:false});
+  const p=data?.filter(x=>x.estado==='pendiente').length||0,c=data?.filter(x=>x.estado==='entregado').length||0;
+  const hoy=new Date().toLocaleDateString('es-DO'),th=data?.filter(x=>new Date(x.creado_en).toLocaleDateString('es-DO')===hoy).reduce((s,x)=>s+parseFloat(x.total||0),0)||0;
+  document.getElementById('pd-p').textContent=p;document.getElementById('pd-c').textContent=c;document.getElementById('pd-h').textContent='RD$'+fmt(th);
+  if(!data?.length){tbEmpty('t-pedidos',6);return;}
+  document.getElementById('t-pedidos').querySelector('tbody').innerHTML=data.map(x=>`<tr><td>${x.cliente_nombre||'—'}</td><td style="color:var(--green3)">RD$${fmt(x.total)}</td><td>${x.delivery||'—'}</td><td>${bdg(x.estado)}</td><td>${new Date(x.creado_en).toLocaleDateString('es-DO')}</td><td><button class="btn btn-green" style="padding:3px 9px;font-size:10px" onclick="updPedido('${x.id}','confirmado')">✓</button></td></tr>`).join('');
+}
+async function updPedido(id,estado){await sb.from('pedidos').update({estado}).eq('id',id);notif('✓','ok');cargarPedidos();}
+
+// ═══ PERFIL ═══
+async function actualizarPerfil(){
+  const{error}=await sb.from('perfiles').update({nombre:document.getElementById('p-nombre').value,telefono:document.getElementById('p-tel').value,rnc:document.getElementById('p-rnc').value}).eq('id',usr.id);
+  if(error){notif('Error','err');return;}
+  notif('✓ Actualizado','ok');
+  registrarLog('Perfil actualizado','perfil','Datos personales modificados');
+}
+async function cambiarPass(){
+  const p=document.getElementById('p-pass').value;if(p.length<8){notif('⚠️ Mínimo 8','err');return;}
+  const{error}=await sb.auth.updateUser({password:p});
+  if(error){notif('Error','err');return;}
+  notif('✓ Contraseña actualizada','ok');document.getElementById('p-pass').value='';
+  registrarLog('Contraseña cambiada','auth','Usuario cambió su contraseña');
+}
+
+// ═══ AUDITORÍA Y SEGURIDAD ═══
+var chartAudit=null;
+
+async function registrarLog(accion,categoria,detalle,tablaAfectada,registroId){
+  try{
+    await sb.from('audit_logs').insert({
+      perfil_id:usr?.id||null,
+      email:perfil?.email||usr?.email||'desconocido',
+      accion,categoria:categoria||'sistema',
+      detalle:detalle||null,
+      user_agent:navigator.userAgent.substring(0,200),
+      tabla_afectada:tablaAfectada||null,
+      registro_id:registroId||null
+    });
+  }catch(e){console.warn('Log error:',e);}
+}
+
+async function registrarSesion(){
+  try{
+    await sb.from('sesiones').insert({
+      perfil_id:usr.id,
+      email:perfil?.email||usr?.email,
+      user_agent:navigator.userAgent.substring(0,200),
+      activa:true
+    });
+  }catch(e){console.warn('Sesión error:',e);}
+}
+
+async function cargarMiActividad(){
+  const{data}=await sb.from('audit_logs').select('*').eq('perfil_id',usr.id).order('creado_en',{ascending:false}).limit(20);
+  if(!data?.length){tbEmpty('t-mi-actividad',3);return;}
+  document.getElementById('t-mi-actividad').querySelector('tbody').innerHTML=data.map(l=>`<tr><td style="white-space:nowrap">${new Date(l.creado_en).toLocaleString('es-DO')}</td><td>${l.accion}</td><td style="color:var(--muted)">${l.detalle||'—'}</td></tr>`).join('');
+  // MFA status
+  cargarMFAStatus();
+}
+
+async function cargarMFAStatus(){
+  const mfaEl=document.getElementById('mfa-status');
+  if(!mfaEl)return;
+  try{
+    const{data,error}=await sb.auth.mfa.listFactors();
+    console.log('MFA listFactors:',{data,error});
+    if(error){
+      mfaEl.innerHTML=`<div class="alert warn">⚠️ Error al consultar 2FA: ${error.message}</div><button class="btn btn-primary" style="margin-top:8px" onclick="iniciarMFA()">Intentar activar 2FA</button>`;
+      return;
+    }
+    const totp=data?.totp||[];
+    const activo=totp.some(f=>f.status==='verified');
+    if(activo){
+      mfaEl.innerHTML=`<div class="alert success" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--green3)">✅ 2FA activo — tu cuenta está protegida con autenticación de dos factores.</div><button class="btn btn-red" style="margin-top:8px" onclick="desactivarMFA()">Desactivar 2FA</button>`;
+      document.getElementById('mfa-setup').style.display='none';
+    } else {
+      mfaEl.innerHTML=`<div class="alert warn">⚠️ 2FA no está activo. Te recomendamos activarlo para proteger tu cuenta.</div><button class="btn btn-primary" style="margin-top:8px" onclick="iniciarMFA()">Activar 2FA</button>`;
+    }
+  }catch(e){
+    console.error('MFA status error:',e);
+    mfaEl.innerHTML=`<div class="alert info">ℹ️ Verificación de dos factores disponible.</div><button class="btn btn-primary" style="margin-top:8px" onclick="iniciarMFA()">Activar 2FA</button>`;
+  }
+}
+
+async function iniciarMFA(){
+  try{
+    const{data,error}=await sb.auth.mfa.enroll({factorType:'totp',friendlyName:'Avanch App'});
+    if(error){
+      console.error('MFA enroll error:',error);
+      if(error.message.includes('disabled')||error.message.includes('not enabled')){
+        notif('⚠️ MFA no está habilitado en Supabase. Ve a Authentication → MFA y actívalo.','err');
+      } else {
+        notif('Error 2FA: '+error.message,'err');
+      }
+      return;
+    }
+    if(!data||!data.totp){
+      notif('⚠️ No se pudo generar el código QR. Verifica que MFA esté habilitado en Supabase.','err');
+      console.error('MFA enroll data:',data);
+      return;
+    }
+    document.getElementById('mfa-setup').style.display='block';
+    document.getElementById('mfa-qr').src=data.totp.qr_code;
+    window._mfaFactorId=data.id;
+    notif('✓ Escanea el código QR con tu app','ok');
+  }catch(e){
+    console.error('MFA exception:',e);
+    notif('Error 2FA: '+e.message+'. ¿Está habilitado MFA en Supabase Dashboard?','err');
+  }
+}
+
+async function verificarMFA(){
+  const code=document.getElementById('mfa-code').value.trim();
+  if(code.length!==6){notif('⚠️ Ingresa el código de 6 dígitos','err');return;}
+  if(!window._mfaFactorId){notif('⚠️ Primero genera el código QR','err');return;}
+  try{
+    const{data:challenge,error:cErr}=await sb.auth.mfa.challenge({factorId:window._mfaFactorId});
+    if(cErr){console.error('MFA challenge error:',cErr);notif('Error challenge: '+cErr.message,'err');return;}
+    const{error}=await sb.auth.mfa.verify({factorId:window._mfaFactorId,challengeId:challenge.id,code});
+    if(error){console.error('MFA verify error:',error);notif('Código incorrecto: '+error.message,'err');return;}
+    await sb.from('perfiles').update({mfa_habilitado:true}).eq('id',usr.id);
+    notif('✅ 2FA activado correctamente','ok');
+    registrarLog('2FA activado','auth','Autenticación de dos factores habilitada');
+    document.getElementById('mfa-code').value='';
+    cargarMFAStatus();
+  }catch(e){console.error('MFA verify exception:',e);notif('Error: '+e.message,'err');}
+}
+
+async function desactivarMFA(){
+  try{
+    const{data}=await sb.auth.mfa.listFactors();
+    const totp=data?.totp||[];
+    for(const f of totp){await sb.auth.mfa.unenroll({factorId:f.id});}
+    await sb.from('perfiles').update({mfa_habilitado:false}).eq('id',usr.id);
+    notif('2FA desactivado','ok');
+    registrarLog('2FA desactivado','auth','Autenticación de dos factores deshabilitada');
+    cargarMFAStatus();
+  }catch(e){notif('Error: '+e.message,'err');}
+}
+
+// ═══ ADMIN: PANEL DE AUDITORÍA ═══
+async function cargarAudit(){
+  const cat=document.getElementById('log-cat')?.value||'';
+  const desde=document.getElementById('log-desde')?.value||'';
+  const hasta=document.getElementById('log-hasta')?.value||'';
+
+  let q=sb.from('audit_logs').select('*').order('creado_en',{ascending:false}).limit(100);
+  if(cat)q=q.eq('categoria',cat);
+  if(desde)q=q.gte('creado_en',desde+'T00:00:00');
+  if(hasta)q=q.lte('creado_en',hasta+'T23:59:59');
+  const{data:logs}=await q;
+
+  // Stats
+  const hoy=new Date().toLocaleDateString('es-DO');
+  const logsHoy=logs?.filter(l=>new Date(l.creado_en).toLocaleDateString('es-DO')===hoy)||[];
+  const loginsHoy=logsHoy.filter(l=>l.accion?.includes('Login'));
+  const fallidos=logsHoy.filter(l=>l.accion?.includes('fallido'));
+  document.getElementById('sg-hoy').textContent=logsHoy.length;
+  document.getElementById('sg-logins').textContent=loginsHoy.length;
+  document.getElementById('sg-fallidos').textContent=fallidos.length;
+
+  // 2FA count
+  const{count:mfaCount}=await sb.from('perfiles').select('*',{count:'exact',head:true}).eq('mfa_habilitado',true);
+  document.getElementById('sg-2fa').textContent=mfaCount||0;
+
+  // Sesiones
+  const{data:ses}=await sb.from('sesiones').select('*').order('creado_en',{ascending:false}).limit(20);
+  document.getElementById('sg-sesiones').textContent=ses?.filter(s=>s.activa).length||0;
+  if(ses?.length){
+    document.getElementById('t-sesiones').querySelector('tbody').innerHTML=ses.map(s=>{
+      const ua=s.user_agent||'';
+      const device=ua.includes('Mobile')?'📱 Móvil':'🖥️ Desktop';
+      const browser=ua.includes('Chrome')?'Chrome':ua.includes('Firefox')?'Firefox':ua.includes('Safari')?'Safari':'Otro';
+      return`<tr><td>${s.email||'—'}</td><td>${device} ${browser}</td><td>${new Date(s.creado_en).toLocaleString('es-DO')}</td><td>${s.activa?'<span class="badge green">Activa</span>':'<span class="badge red">Cerrada</span>'}</td></tr>`;
+    }).join('');
+  }
+
+  // Tabla logs
+  if(!logs?.length){tbEmpty('t-audit',5);} else {
+    document.getElementById('t-audit').querySelector('tbody').innerHTML=logs.map(l=>{
+      const catColor={'auth':'blue','clientes':'green','facturas':'gold','pagos':'green','inversiones':'purple','fondo':'purple','config':'red','perfil':'blue'};
+      return`<tr><td style="white-space:nowrap;font-size:11px">${new Date(l.creado_en).toLocaleString('es-DO')}</td><td>${l.email||'—'}</td><td>${l.accion}</td><td>${bdg(l.categoria)}</td><td style="color:var(--muted);font-size:11px">${l.detalle||'—'}</td></tr>`;
+    }).join('');
+  }
+
+  // Gráfica actividad 7 días
+  renderChartAudit(logs||[]);
+}
+
+function renderChartAudit(logs){
+  const ctx=document.getElementById('chart-audit');if(!ctx)return;
+  if(chartAudit)chartAudit.destroy();
+  const dias=[],datos=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const key=d.toLocaleDateString('es-DO');
+    dias.push(d.toLocaleDateString('es-DO',{weekday:'short',day:'numeric'}));
+    datos.push(logs.filter(l=>new Date(l.creado_en).toLocaleDateString('es-DO')===key).length);
+  }
+  chartAudit=new Chart(ctx,{type:'bar',data:{labels:dias,datasets:[{label:'Eventos',data:datos,backgroundColor:'rgba(59,130,246,0.6)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#a0a8bc',font:{size:10}}}},scales:{x:{ticks:{color:'#7b849a'},grid:{color:'rgba(255,255,255,0.05)'}},y:{ticks:{color:'#7b849a',stepSize:1},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+}
+
+// ═══ CONTRATOS DIGITALES ═══
+var _contratoActual=null;
+
+async function generarContrato(inv,fechaInicio,fechaVenc){
+  const fc=fondoConfig;
+  const nombre=inv.perfiles?.nombre||'Inversionista';
+  const email=inv.perfiles?.email||'';
+  const rnc=inv.perfiles?.rnc||'N/A';
+  const monto=parseFloat(inv.monto||0);
+  const plazo=parseInt(inv.plazo_meses||6);
+  const ganInv=Math.min(monto*(fc.tasa_inversionista_anual/100/12)*plazo,fc.techo_ganancia);
+  const numero='CTR-'+Date.now().toString().slice(-8);
+
+  const contenido=`
+CONTRATO DE INVERSIÓN N° ${numero}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ENTRE LAS PARTES:
+
+PRIMERA PARTE (Administrador del Fondo):
+Avanch Technology SRL
+RNC: [RNC Avanch]
+Santo Domingo Este, República Dominicana
+
+SEGUNDA PARTE (Inversionista):
+Nombre: ${nombre}
+Email: ${email}
+RNC/Cédula: ${rnc}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TÉRMINOS Y CONDICIONES:
+
+1. OBJETO DEL CONTRATO
+El inversionista aporta capital al Fondo de Inversión Avanch bajo los términos descritos a continuación.
+
+2. MONTO DE INVERSIÓN
+Capital: RD$${fmt(monto)}
+Propósito: ${inv.proposito||'Capital de trabajo'}
+
+3. PLAZO
+Duración: ${plazo} meses
+Fecha de inicio: ${fechaInicio.toLocaleDateString('es-DO')}
+Fecha de vencimiento: ${fechaVenc.toLocaleDateString('es-DO')}
+
+4. RENDIMIENTO
+Tasa aplicada: ${fc.tasa_inversionista_anual}% anual (Tasa BC-RD)
+Ganancia estimada: RD$${fmt(ganInv)}
+Techo de ganancia: RD$${fmt(fc.techo_ganancia)}
+Total proyectado al vencimiento: RD$${fmt(monto+ganInv)}
+
+5. CONDICIONES DE RETIRO
+Penalización por retiro anticipado: ${fc.penalizacion_retiro_pct}%
+Plazo mínimo obligatorio: ${fc.plazo_minimo_meses} mes(es)
+
+6. RESERVA DE LIQUIDEZ
+El fondo mantiene una reserva del ${fc.reserva_liquidez_pct}% del capital total.
+
+7. EXPOSICIÓN MÁXIMA
+Ningún inversionista podrá representar más del ${fc.max_exposicion_pct}% del fondo total.
+
+8. TRANSPARENCIA
+El inversionista tiene acceso en tiempo real a:
+- Estado de su inversión
+- Movimientos del fondo
+- Ganancia acumulada
+- Estados de cuenta mensuales
+
+9. RESOLUCIÓN DE DISPUTAS
+Cualquier disputa será resuelta conforme a las leyes de la República Dominicana.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generado el: ${new Date().toLocaleString('es-DO')}
+Avanch Technology SRL — Innovar, Desarrollar y Crear
+  `.trim();
+
+  const{error}=await sb.from('contratos').insert({
+    inversion_id:inv.id,perfil_id:inv.perfil_id,tipo:'inversion',
+    numero,contenido,monto,plazo_meses:plazo,tasa:fc.tasa_inversionista_anual
+  });
+  if(error)console.error('Error contrato:',error);
+  registrarLog('Contrato generado','inversiones','Contrato '+numero+' para '+nombre,'contratos');
+}
+
+async function cargarMisContratos(){
+  const{data}=await sb.from('contratos').select('*').eq('perfil_id',usr.id).order('creado_en',{ascending:false});
+  if(!data?.length){tbEmpty('t-mis-contratos',6);return;}
+  document.getElementById('t-mis-contratos').querySelector('tbody').innerHTML=data.map(c=>`<tr>
+    <td style="font-weight:600">${c.numero}</td>
+    <td>${bdg(c.tipo)}</td>
+    <td style="color:var(--green3)">RD$${fmt(c.monto)}</td>
+    <td>${new Date(c.creado_en).toLocaleDateString('es-DO')}</td>
+    <td>${c.firmado?'<span class="badge green">✅ Firmado</span>':'<span class="badge gold">⏳ Pendiente</span>'}</td>
+    <td><button class="btn btn-primary" style="padding:3px 9px;font-size:10px" onclick="verContrato('${c.id}')">👁️ Ver</button></td>
+  </tr>`).join('');
+}
+
+async function verContrato(id){
+  const{data:c}=await sb.from('contratos').select('*').eq('id',id).single();
+  if(!c)return;
+  _contratoActual=c;
+  document.getElementById('contrato-body').innerHTML='<pre style="white-space:pre-wrap;font-family:var(--ff);font-size:12px;color:var(--text);line-height:1.8">'+c.contenido+'</pre>';
+  if(c.firmado){
+    document.getElementById('contrato-firma').style.display='none';
+    document.getElementById('contrato-firmado').style.display='block';
+    document.getElementById('contrato-firmado').innerHTML=`<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px;color:var(--green3);font-size:12px">✅ Firmado digitalmente el ${new Date(c.fecha_firma).toLocaleString('es-DO')}<br>Hash: ${c.firma_hash||'—'}</div>`;
+  } else {
+    document.getElementById('contrato-firma').style.display='block';
+    document.getElementById('contrato-firmado').style.display='none';
+    document.getElementById('firma-nombre').value='';
+  }
+  document.getElementById('modal-contrato').classList.add('open');
+}
+
+async function firmarContrato(){
+  if(!_contratoActual)return;
+  const nombre=document.getElementById('firma-nombre').value.trim();
+  if(!nombre){notif('⚠️ Escribe tu nombre completo para firmar','err');return;}
+  // Generar hash simple de firma
+  const hashData=_contratoActual.id+nombre+new Date().toISOString();
+  const hash=btoa(hashData).substring(0,32);
+  const{error}=await sb.from('contratos').update({
+    firmado:true,fecha_firma:new Date().toISOString(),
+    firma_hash:hash
+  }).eq('id',_contratoActual.id);
+  if(error){notif('Error al firmar','err');return;}
+  notif('✅ Contrato firmado digitalmente','ok');
+  registrarLog('Contrato firmado','inversiones','Contrato '+_contratoActual.numero+' firmado por '+nombre,'contratos',_contratoActual.id);
+  cerrarContrato();
+  cargarMisContratos();
+}
+
+function cerrarContrato(){
+  document.getElementById('modal-contrato').classList.remove('open');
+  _contratoActual=null;
+}
+
+function imprimirContrato(){
+  if(!_contratoActual)return;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Contrato ${_contratoActual.numero}</title><style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:13px;line-height:1.8;color:#222}pre{white-space:pre-wrap;font-family:inherit}h1{font-size:16px;margin-bottom:20px}@media print{body{padding:20px}}</style></head><body><pre>${_contratoActual.contenido}</pre>${_contratoActual.firmado?'<br><br><strong>✅ FIRMADO DIGITALMENTE</strong><br>Fecha: '+new Date(_contratoActual.fecha_firma).toLocaleString('es-DO')+'<br>Hash: '+_contratoActual.firma_hash:''}</body></html>`);
+  win.document.close();
+  win.print();
+}
+
+// ═══ ESTADOS DE CUENTA ═══
+async function cargarMisEstados(){
+  const{data}=await sb.from('estados_cuenta').select('*').eq('perfil_id',usr.id).order('creado_en',{ascending:false});
+  if(!data?.length){tbEmpty('t-mis-estados',4);return;}
+  document.getElementById('t-mis-estados').querySelector('tbody').innerHTML=data.map(e=>`<tr>
+    <td style="font-weight:600">${e.periodo}</td>
+    <td>${bdg(e.tipo)}</td>
+    <td>${new Date(e.creado_en).toLocaleDateString('es-DO')}</td>
+    <td><button class="btn btn-primary" style="padding:3px 9px;font-size:10px" onclick="verEstado('${e.id}')">👁️ Ver</button> <button class="btn btn-ghost" style="padding:3px 9px;font-size:10px" onclick="imprimirEstado('${e.id}')">🖨️</button></td>
+  </tr>`).join('');
+}
+
+async function verEstado(id){
+  const{data:e}=await sb.from('estados_cuenta').select('*').eq('id',id).single();
+  if(!e||!e.resumen)return;
+  const r=e.resumen;
+  _contratoActual={id,contenido:generarTextoEstado(e),numero:'EDC-'+e.periodo};
+  document.getElementById('contrato-body').innerHTML=generarHTMLEstado(e);
+  document.getElementById('contrato-firma').style.display='none';
+  document.getElementById('contrato-firmado').style.display='none';
+  document.querySelector('#modal-contrato .modal-title').innerHTML='📋 Estado de Cuenta — '+e.periodo+' <button class="modal-close" onclick="cerrarContrato()">✕</button>';
+  document.getElementById('modal-contrato').classList.add('open');
+}
+
+function generarHTMLEstado(e){
+  const r=e.resumen;
+  let h=`<div style="font-size:12px;line-height:1.8">`;
+  h+=`<div style="text-align:center;margin-bottom:16px"><strong style="font-size:16px;font-family:var(--ff2)">ESTADO DE CUENTA</strong><br>${e.periodo}<br>Avanch Technology SRL</div>`;
+  h+=`<div style="border-bottom:2px solid var(--border);margin-bottom:12px;padding-bottom:8px"><strong>Cliente:</strong> ${r.nombre||'—'}<br><strong>Email:</strong> ${r.email||'—'}</div>`;
+  if(e.tipo==='cliente'){
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">FACTURADO</span><br><strong style="color:var(--blue3)">RD$${fmt(r.total_facturado||0)}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">PAGADO</span><br><strong style="color:var(--green3)">RD$${fmt(r.total_pagado||0)}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">PENDIENTE</span><br><strong style="color:var(--gold3)">RD$${fmt(r.total_pendiente||0)}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">FACTURAS</span><br><strong>${r.num_facturas||0}</strong></div></div>`;
+    if(r.facturas?.length){
+      h+=`<table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:6px;color:var(--muted)">Concepto</th><th style="text-align:right;padding:6px;color:var(--muted)">Monto</th><th style="text-align:center;padding:6px;color:var(--muted)">Estado</th></tr></thead><tbody>`;
+      r.facturas.forEach(f=>{h+=`<tr style="border-bottom:1px solid var(--border)"><td style="padding:6px">${f.concepto}</td><td style="text-align:right;padding:6px">RD$${fmt(f.monto)}</td><td style="text-align:center;padding:6px">${bdg(f.estado)}</td></tr>`;});
+      h+=`</tbody></table>`;
+    }
+  } else {
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">INVERTIDO</span><br><strong style="color:var(--green3)">RD$${fmt(r.total_invertido||0)}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">GANANCIA ACUM.</span><br><strong style="color:var(--gold3)">RD$${fmt(r.ganancia_acumulada||0)}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">INV. ACTIVAS</span><br><strong>${r.activas||0}</strong></div>`;
+    h+=`<div style="background:var(--bg);border-radius:8px;padding:10px"><span style="color:var(--muted);font-size:10px">TASA</span><br><strong style="color:var(--blue3)">${r.tasa||7}%</strong></div></div>`;
+  }
+  h+=`<div style="margin-top:14px;color:var(--muted);font-size:10px;text-align:center">Generado: ${new Date(e.creado_en).toLocaleString('es-DO')} — Avanch Technology SRL</div></div>`;
+  return h;
+}
+
+function generarTextoEstado(e){
+  const r=e.resumen;
+  return`ESTADO DE CUENTA — ${e.periodo}\nAvanch Technology SRL\n\nCliente: ${r.nombre||'—'}\nEmail: ${r.email||'—'}\n\n${e.tipo==='cliente'?'Facturado: RD$'+fmt(r.total_facturado)+'\nPagado: RD$'+fmt(r.total_pagado)+'\nPendiente: RD$'+fmt(r.total_pendiente):'Invertido: RD$'+fmt(r.total_invertido)+'\nGanancia: RD$'+fmt(r.ganancia_acumulada)}\n\nGenerado: ${new Date(e.creado_en).toLocaleString('es-DO')}`;
+}
+
+async function imprimirEstado(id){
+  const{data:e}=await sb.from('estados_cuenta').select('*').eq('id',id).single();
+  if(!e)return;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Estado ${e.periodo}</title><style>body{font-family:'Segoe UI',sans-serif;padding:40px;font-size:13px;color:#222}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left}@media print{body{padding:20px}}</style></head><body>${generarHTMLEstadoPrint(e)}</body></html>`);
+  win.document.close();win.print();
+}
+
+function generarHTMLEstadoPrint(e){
+  const r=e.resumen;
+  let h=`<h1 style="text-align:center">ESTADO DE CUENTA — ${e.periodo}</h1><p style="text-align:center">Avanch Technology SRL</p><hr>`;
+  h+=`<p><strong>Cliente:</strong> ${r.nombre||'—'} | <strong>Email:</strong> ${r.email||'—'}</p>`;
+  if(e.tipo==='cliente'){
+    h+=`<p>Facturado: <strong>RD$${fmt(r.total_facturado||0)}</strong> | Pagado: <strong>RD$${fmt(r.total_pagado||0)}</strong> | Pendiente: <strong>RD$${fmt(r.total_pendiente||0)}</strong></p>`;
+    if(r.facturas?.length){
+      h+=`<table><thead><tr><th>Concepto</th><th>Monto</th><th>Estado</th></tr></thead><tbody>`;
+      r.facturas.forEach(f=>{h+=`<tr><td>${f.concepto}</td><td>RD$${fmt(f.monto)}</td><td>${f.estado}</td></tr>`;});
+      h+=`</tbody></table>`;
+    }
+  } else {
+    h+=`<p>Invertido: <strong>RD$${fmt(r.total_invertido||0)}</strong> | Ganancia: <strong>RD$${fmt(r.ganancia_acumulada||0)}</strong> | Activas: <strong>${r.activas||0}</strong></p>`;
+  }
+  h+=`<br><p style="font-size:11px;color:#888">Generado: ${new Date(e.creado_en).toLocaleString('es-DO')}</p>`;
+  return h;
+}
+
+// ═══ ADMIN: GENERAR ESTADOS (lote) ═══
+// Se puede llamar desde consola o agregar botón en admin
+async function generarEstadosCuentaMes(){
+  const ahora=new Date();
+  const periodo=ahora.toLocaleDateString('es-DO',{month:'long',year:'numeric'});
+
+  // Estados para clientes
+  const{data:clientes}=await sb.from('clientes').select('*');
+  if(clientes?.length){
+    for(const c of clientes){
+      if(!c.perfil_id)continue;
+      const{data:facs}=await sb.from('facturas').select('*').eq('cliente_id',c.id);
+      const resumen={
+        nombre:c.nombre,email:c.email,
+        total_facturado:facs?.reduce((a,f)=>a+parseFloat(f.monto_rd||0),0)||0,
+        total_pagado:facs?.filter(f=>f.estado==='pagada').reduce((a,f)=>a+parseFloat(f.monto_rd||0),0)||0,
+        total_pendiente:facs?.filter(f=>f.estado==='pendiente').reduce((a,f)=>a+parseFloat(f.monto_rd||0),0)||0,
+        num_facturas:facs?.length||0,
+        facturas:facs?.slice(0,10).map(f=>({concepto:f.concepto,monto:f.monto_rd,estado:f.estado}))||[]
+      };
+      await sb.from('estados_cuenta').insert({perfil_id:c.perfil_id,tipo:'cliente',periodo,resumen});
+    }
+  }
+
+  // Estados para inversionistas
+  const{data:inversionistas}=await sb.from('perfiles').select('*').eq('rol','inversionista');
+  if(inversionistas?.length){
+    for(const p of inversionistas){
+      const{data:invs}=await sb.from('inversiones').select('*').eq('perfil_id',p.id);
+      const activas=invs?.filter(i=>i.estado==='aprobada')||[];
+      const fc=fondoConfig;
+      const resumen={
+        nombre:p.nombre,email:p.email,
+        total_invertido:activas.reduce((a,i)=>a+parseFloat(i.monto||0),0),
+        ganancia_acumulada:activas.reduce((a,i)=>a+parseFloat(i.ganancia_acumulada||0),0),
+        activas:activas.length,
+        tasa:fc.tasa_inversionista_anual
+      };
+      await sb.from('estados_cuenta').insert({perfil_id:p.id,tipo:'inversionista',periodo,resumen});
+    }
+  }
+
+  notif('✅ Estados de cuenta generados para '+periodo,'ok');
+  registrarLog('Estados de cuenta generados','config','Periodo: '+periodo);
+}
+
+// ═══ REPORTES DE CORTE MENSUAL ═══
+async function generarReporteCorte(){
+  const ahora=new Date();
+  const mes=ahora.getMonth(),anio=ahora.getFullYear();
+  const periodo=ahora.toLocaleDateString('es-DO',{month:'long',year:'numeric'});
+  const fechaCorte=new Date(anio,mes,25);
+  const fechaPago=new Date(anio,mes,30);
+
+  // Buscar pagos del periodo (desde el 26 del mes anterior hasta el 25 del mes actual)
+  const desde=new Date(anio,mes-1,26);
+  const hasta=fechaCorte;
+
+  const{data:pagos}=await sb.from('pagos').select('*').gte('creado_en',desde.toISOString()).lte('creado_en',hasta.toISOString()+'T23:59:59');
+
+  if(!pagos?.length){notif('⚠️ No hay pagos en este periodo para generar reporte','err');return;}
+
+  const totalRecaudado=pagos.reduce((a,p)=>a+parseFloat(p.monto||0),0);
+  const avanchTotal=pagos.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0);
+  const komultiTotal=pagos.reduce((a,p)=>a+parseFloat(p.socio_parte||0),0);
+  const vicortizTotal=pagos.reduce((a,p)=>a+parseFloat(p.vicortiz_parte||0),0);
+
+  // Desglose por modelo
+  const m1=pagos.filter(p=>parseInt(p.modelo)===1);
+  const m2=pagos.filter(p=>parseInt(p.modelo)===2);
+  const m3=pagos.filter(p=>parseInt(p.modelo)===3);
+
+  const detalle={
+    total_pagos:pagos.length,
+    m1:{
+      pagos:m1.length,
+      total:m1.reduce((a,p)=>a+parseFloat(p.monto||0),0),
+      avanch:m1.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0),
+      komultisoft:m1.reduce((a,p)=>a+parseFloat(p.socio_parte||0),0),
+      vicortiz:0
+    },
+    m2:{
+      pagos:m2.length,
+      total:m2.reduce((a,p)=>a+parseFloat(p.monto||0),0),
+      avanch:m2.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0),
+      komultisoft:m2.reduce((a,p)=>a+parseFloat(p.socio_parte||0),0),
+      vicortiz:m2.reduce((a,p)=>a+parseFloat(p.vicortiz_parte||0),0)
+    },
+    m3:{
+      pagos:m3.length,
+      total:m3.reduce((a,p)=>a+parseFloat(p.monto||0),0),
+      avanch:m3.reduce((a,p)=>a+parseFloat(p.avanch_parte||0),0),
+      komultisoft:0,
+      vicortiz:0
+    }
+  };
+
+  const{error}=await sb.from('reportes_corte').insert({
+    periodo,fecha_corte:fechaCorte.toISOString().split('T')[0],
+    fecha_pago:fechaPago.toISOString().split('T')[0],
+    total_recaudado:totalRecaudado,avanch_total:avanchTotal,
+    komultisoft_total:komultiTotal,vicortiz_total:vicortizTotal,
+    detalle,estado:'pendiente'
+  });
+  if(error){notif('Error: '+error.message,'err');return;}
+  notif('✅ Reporte de corte generado para '+periodo,'ok');
+  registrarLog('Reporte de corte generado','pagos','Periodo: '+periodo+' — Total: RD$'+fmt(totalRecaudado));
+  cargarReportesCorte();
+}
+
+async function cargarReportesCorte(){
+  const{data}=await sb.from('reportes_corte').select('*').order('creado_en',{ascending:false});
+  if(!data?.length){document.getElementById('t-reportes').querySelector('tbody').innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">Sin reportes</td></tr>';return;}
+  document.getElementById('t-reportes').querySelector('tbody').innerHTML=data.map(r=>`<tr>
+    <td style="font-weight:600">${r.periodo}</td>
+    <td style="color:var(--green3)">RD$${fmt(r.total_recaudado)}</td>
+    <td style="color:var(--blue3)">RD$${fmt(r.avanch_total)}</td>
+    <td style="color:var(--purple3)">RD$${fmt(r.komultisoft_total)}</td>
+    <td style="color:var(--gold3)">RD$${fmt(r.vicortiz_total)}</td>
+    <td>${r.fecha_corte}</td>
+    <td>${r.fecha_pago}</td>
+    <td>${bdg(r.estado)}</td>
+    <td><button class="btn btn-primary" style="padding:3px 8px;font-size:10px" onclick="verReporteCorte('${r.id}')">👁️</button> ${r.estado==='pendiente'?`<button class="btn btn-green" style="padding:3px 8px;font-size:10px" onclick="marcarReportePagado('${r.id}')">✓ Pagado</button>`:''}</td>
+  </tr>`).join('');
+}
+
+async function marcarReportePagado(id){
+  const{error}=await sb.from('reportes_corte').update({estado:'pagado'}).eq('id',id);
+  if(error){notif('Error','err');return;}
+  notif('✅ Reporte marcado como pagado','ok');
+  registrarLog('Reporte de corte pagado','pagos','Reporte marcado como pagado','reportes_corte',id);
+  cargarReportesCorte();
+}
+
+async function verReporteCorte(id){
+  const{data:r}=await sb.from('reportes_corte').select('*').eq('id',id).single();
+  if(!r)return;
+  const d=r.detalle||{};
+  const contenido=`
+REPORTE DE CORTE — ${r.periodo}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Avanch Technology SRL — Fintech
+
+Fecha de corte: ${r.fecha_corte}
+Fecha de pago: ${r.fecha_pago}
+Estado: ${r.estado.toUpperCase()}
+
+━━━ RESUMEN GENERAL ━━━
+Total recaudado: RD$${fmt(r.total_recaudado)}
+Total pagos: ${d.total_pagos||0}
+
+━━━ DISTRIBUCIÓN POR SOCIO ━━━
+Avanch Technology:    RD$${fmt(r.avanch_total)}
+Komultisoft:          RD$${fmt(r.komultisoft_total)}
+VicOrtiz Group:       RD$${fmt(r.vicortiz_total)}
+
+━━━ DESGLOSE POR MODELO ━━━
+
+M1 — Facturación (75% Avanch / 25% Komultisoft)
+  Pagos: ${d.m1?.pagos||0}
+  Total: RD$${fmt(d.m1?.total||0)}
+  → Avanch: RD$${fmt(d.m1?.avanch||0)}
+  → Komultisoft: RD$${fmt(d.m1?.komultisoft||0)}
+
+M2 — e-CF (65% VicOrtiz / 26% Avanch / 9% Komultisoft)
+  Pagos: ${d.m2?.pagos||0}
+  Total: RD$${fmt(d.m2?.total||0)}
+  → VicOrtiz Group: RD$${fmt(d.m2?.vicortiz||0)}
+  → Avanch: RD$${fmt(d.m2?.avanch||0)}
+  → Komultisoft: RD$${fmt(d.m2?.komultisoft||0)}
+
+M3 — Tienda (100% Avanch)
+  Pagos: ${d.m3?.pagos||0}
+  Total: RD$${fmt(d.m3?.total||0)}
+  → Avanch: RD$${fmt(d.m3?.avanch||0)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generado: ${new Date(r.creado_en).toLocaleString('es-DO')}
+Avanch Technology SRL — Innovar, Desarrollar y Crear
+  `.trim();
+
+  _contratoActual={id:r.id,contenido,numero:'RPT-'+r.periodo,firmado:false};
+  document.getElementById('contrato-body').innerHTML='<pre style="white-space:pre-wrap;font-family:var(--ff);font-size:12px;color:var(--text);line-height:1.8">'+contenido+'</pre>';
+  document.getElementById('contrato-firma').style.display='none';
+  document.getElementById('contrato-firmado').style.display='none';
+  document.querySelector('#modal-contrato .modal-title').innerHTML='📊 Reporte de Corte — '+r.periodo+' <button class="modal-close" onclick="cerrarContrato()">✕</button>';
+  document.getElementById('modal-contrato').classList.add('open');
+}
+
+// ═══ UTILIDADES ═══
+function tog(id){const e=document.getElementById(id);e.style.display=e.style.display==='none'?'block':'none';}
+function tbEmpty(id,cols){document.getElementById(id).querySelector('tbody').innerHTML=`<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:18px">Sin registros</td></tr>`;}
+function bdg(e){const m={activo:'green',pagada:'green',pagado:'green',confirmado:'green',entregado:'green',convertido:'green',aprobada:'green',firmado:'green',inversion:'purple',cliente:'blue',inversionista:'purple',pendiente:'gold',nuevo:'gold',deposito:'green',ganancia:'green',retiro:'red',comision:'purple',enviado:'blue',contactado:'blue',inactivo:'red',vencida:'red',cancelada:'red',rechazada:'red',suspendido:'red'};return`<span class="badge ${m[e]||'blue'}">${e||'—'}</span>`;}
+function fmt(n){return parseFloat(n||0).toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function notif(m,t){const n=document.getElementById('notif');n.textContent=m;n.className='notif '+(t||'ok')+' show';setTimeout(()=>n.classList.remove('show'),3000);}
+</script>
+</body>
+</html>
